@@ -103,3 +103,50 @@ export async function PATCH(request: NextRequest) {
         );
     }
 }
+
+// Delete order(s)
+export async function DELETE(request: NextRequest) {
+    try {
+        const { orderId, orderIds } = await request.json();
+
+        if (!orderId && (!orderIds || !Array.isArray(orderIds))) {
+            return NextResponse.json(
+                { error: 'orderId or orderIds (array) is required' },
+                { status: 400 }
+            );
+        }
+
+        const data = await getAppData();
+        const initialCount = data.orders.length;
+
+        if (orderId) {
+            // Single delete
+            data.orders = data.orders.filter(o => o.id !== orderId);
+        } else {
+            // Bulk delete
+            data.orders = data.orders.filter(o => !orderIds.includes(o.id));
+        }
+
+        if (data.orders.length === initialCount) {
+            return NextResponse.json(
+                { error: 'No orders found to delete' },
+                { status: 404 }
+            );
+        }
+
+        await saveAppData(data);
+
+        return NextResponse.json({
+            success: true,
+            message: orderId ? 'Order deleted successfully' : `${initialCount - data.orders.length} orders deleted successfully`,
+            deletedCount: initialCount - data.orders.length
+        });
+
+    } catch (error) {
+        console.error('Error deleting order:', error);
+        return NextResponse.json(
+            { error: `Failed to delete order: ${error instanceof Error ? error.message : String(error)}` },
+            { status: 500 }
+        );
+    }
+}

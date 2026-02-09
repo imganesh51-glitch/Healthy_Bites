@@ -22,6 +22,7 @@ export default function AdminDashboard() {
     const [favorites, setFavorites] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
 
     // Fetch data from API on mount
     const fetchData = () => {
@@ -139,6 +140,57 @@ export default function AdminDashboard() {
         saveData({ products: newProducts });
         setShowModal(false);
         setEditingProduct(null);
+    };
+
+    const handleDeleteOrder = (orderId: string) => {
+        if (!confirm('Are you sure you want to delete this order?')) return;
+
+        fetch('/api/orders', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId })
+        }).then(res => res.json()).then(result => {
+            if (result.success) {
+                setOrders(orders.filter(o => o.id !== orderId));
+                setSelectedOrderIds(selectedOrderIds.filter(id => id !== orderId));
+            } else {
+                alert('Failed to delete order: ' + result.error);
+            }
+        });
+    };
+
+    const handleBulkDeleteOrders = () => {
+        if (selectedOrderIds.length === 0) return;
+        if (!confirm(`Are you sure you want to delete ${selectedOrderIds.length} orders?`)) return;
+
+        fetch('/api/orders', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderIds: selectedOrderIds })
+        }).then(res => res.json()).then(result => {
+            if (result.success) {
+                setOrders(orders.filter(o => !selectedOrderIds.includes(o.id)));
+                setSelectedOrderIds([]);
+            } else {
+                alert('Failed to delete orders: ' + result.error);
+            }
+        });
+    };
+
+    const toggleOrderSelection = (orderId: string) => {
+        if (selectedOrderIds.includes(orderId)) {
+            setSelectedOrderIds(selectedOrderIds.filter(id => id !== orderId));
+        } else {
+            setSelectedOrderIds([...selectedOrderIds, orderId]);
+        }
+    };
+
+    const handleSelectAllOrders = () => {
+        if (selectedOrderIds.length === orders.length) {
+            setSelectedOrderIds([]);
+        } else {
+            setSelectedOrderIds(orders.map(o => o.id));
+        }
     };
 
     const saveData = async (overrides: { products?: Product[], favorites?: string[], coupons?: Coupon[], siteConfig?: SiteConfig, orders?: Order[], silent?: boolean } = {}) => {
@@ -591,10 +643,30 @@ export default function AdminDashboard() {
 
                 {activeTab === 'orders' && (
                     <div className="orders-section">
-                        <div className="section-header">
+                        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <h2>📋 Order History</h2>
                                 <p>View and manage customer orders</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                {orders.length > 0 && (
+                                    <button
+                                        onClick={handleSelectAllOrders}
+                                        className="btn-secondary"
+                                        style={{ fontSize: '0.9rem' }}
+                                    >
+                                        {selectedOrderIds.length === orders.length ? 'Unselect All' : 'Select All'}
+                                    </button>
+                                )}
+                                {selectedOrderIds.length > 0 && (
+                                    <button
+                                        onClick={handleBulkDeleteOrders}
+                                        className="btn-primary"
+                                        style={{ background: '#FF6B6B', borderColor: '#FF6B6B' }}
+                                    >
+                                        🗑️ Delete ({selectedOrderIds.length})
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -605,30 +677,48 @@ export default function AdminDashboard() {
                         ) : (
                             <div className="orders-list" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 {orders.map(order => (
-                                    <div key={order.id} className="card" style={{ padding: '2rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
+                                    <div key={order.id} className="card" style={{ padding: '2rem', border: selectedOrderIds.includes(order.id) ? '2px solid #FF6B6B' : '1px solid #eee', position: 'relative' }}>
+                                        <div style={{ position: 'absolute', left: '1rem', top: '1.5rem' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedOrderIds.includes(order.id)}
+                                                onChange={() => toggleOrderSelection(order.id)}
+                                                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '1rem', paddingLeft: '2.5rem' }}>
                                             <div>
                                                 <h3 style={{ margin: 0 }}>Order #{order.id}</h3>
                                                 <p style={{ color: '#666', margin: '0.25rem 0' }}>{new Date(order.date).toLocaleString()}</p>
                                             </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <span style={{
-                                                    padding: '0.5rem 1rem',
-                                                    borderRadius: '20px',
-                                                    fontSize: '0.85rem',
-                                                    fontWeight: 'bold',
-                                                    textTransform: 'uppercase',
-                                                    backgroundColor:
-                                                        order.status === 'delivered' ? '#e8f5e9' :
-                                                            order.status === 'pending' ? '#fff3e0' :
-                                                                order.status === 'cancelled' ? '#ffebee' : '#e3f2fd',
-                                                    color:
-                                                        order.status === 'delivered' ? '#2e7d32' :
-                                                            order.status === 'pending' ? '#ef6c00' :
-                                                                order.status === 'cancelled' ? '#c62828' : '#1565c0'
-                                                }}>
-                                                    {order.status}
-                                                </span>
+                                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <span style={{
+                                                        padding: '0.5rem 1rem',
+                                                        borderRadius: '20px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: 'bold',
+                                                        textTransform: 'uppercase',
+                                                        backgroundColor:
+                                                            order.status === 'delivered' ? '#e8f5e9' :
+                                                                order.status === 'pending' ? '#fff3e0' :
+                                                                    order.status === 'cancelled' ? '#ffebee' : '#e3f2fd',
+                                                        color:
+                                                            order.status === 'delivered' ? '#2e7d32' :
+                                                                order.status === 'pending' ? '#ef6c00' :
+                                                                    order.status === 'cancelled' ? '#c62828' : '#1565c0'
+                                                    }}>
+                                                        {order.status}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDeleteOrder(order.id)}
+                                                    className="btn-icon delete"
+                                                    title="Delete Order"
+                                                    style={{ background: '#fff0f0', border: '1px solid #ffcccc', padding: '0.4rem' }}
+                                                >
+                                                    🗑️
+                                                </button>
                                             </div>
                                         </div>
 
