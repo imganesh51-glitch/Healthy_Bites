@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Coupon, Product, ProductCategory, ProductVariant, SiteConfig } from '../../../lib/data';
+import { Coupon, Product, ProductCategory, ProductVariant, SiteConfig, Order } from '../../../lib/data';
 import './dashboard.css';
 
 export default function AdminDashboard() {
@@ -11,7 +11,8 @@ export default function AdminDashboard() {
     const [products, setProducts] = useState<Product[]>([]);
     const [coupons, setCoupons] = useState<Coupon[]>([]);
     const [siteConfig, setSiteConfig] = useState<SiteConfig>({ heroImage: '/images/hero-baby.png', storyImage: '/images/products-hero.png', founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg' });
-    const [activeTab, setActiveTab] = useState<'products' | 'favorites' | 'coupons' | 'settings' | 'add'>('products');
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [activeTab, setActiveTab] = useState<'products' | 'favorites' | 'coupons' | 'settings' | 'add' | 'orders'>('products');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -31,6 +32,7 @@ export default function AdminDashboard() {
                     setProducts(data.products || []);
                     setCoupons(data.coupons || []);
                     setFavorites(data.favorites || []);
+                    setOrders(data.orders || []);
                     setSiteConfig(data.siteConfig || { heroImage: '/images/hero-baby.png', storyImage: '/images/products-hero.png', founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg' });
                 }
                 setLoading(false);
@@ -96,8 +98,9 @@ export default function AdminDashboard() {
 
     const handleDeleteProduct = (id: string) => {
         if (confirm('Are you sure you want to delete this product?')) {
-            setProducts(products.filter(p => p.id !== id));
-            alert('Product deleted successfully! (Note: This is a demo - changes are not persisted)');
+            const newProducts = products.filter(p => p.id !== id);
+            setProducts(newProducts);
+            saveData({ products: newProducts });
         }
     };
 
@@ -107,39 +110,42 @@ export default function AdminDashboard() {
     };
 
     const handleToggleFavorite = (id: string) => {
+        let newFavorites;
         if (favorites.includes(id)) {
-            setFavorites(favorites.filter(fav => fav !== id));
+            newFavorites = favorites.filter(fav => fav !== id);
         } else {
-            setFavorites([...favorites, id]);
+            newFavorites = [...favorites, id];
         }
+        setFavorites(newFavorites);
+        saveData({ favorites: newFavorites, silent: true });
     };
 
     const saveProduct = (product: Product) => {
+        let newProducts;
         if (editingProduct) {
-            // Update existing
-            setProducts(products.map(p => p.id === product.id ? product : p));
-            alert('Product updated successfully!');
+            newProducts = products.map(p => p.id === product.id ? product : p);
         } else {
-            // Add new
-            setProducts([...products, product]);
-            alert('Product added successfully!');
+            newProducts = [...products, product];
         }
+        setProducts(newProducts);
+        saveData({ products: newProducts });
         setShowModal(false);
         setEditingProduct(null);
     };
 
-    const saveData = async (overrides: { products?: Product[], favorites?: string[], coupons?: Coupon[], siteConfig?: SiteConfig, silent?: boolean } = {}) => {
+    const saveData = async (overrides: { products?: Product[], favorites?: string[], coupons?: Coupon[], siteConfig?: SiteConfig, orders?: Order[], silent?: boolean } = {}) => {
         const p = overrides.products || products;
         const f = overrides.favorites || favorites;
         const c = overrides.coupons || coupons;
         const sc = overrides.siteConfig || siteConfig;
+        const o = overrides.orders || orders;
         const silent = overrides.silent || false;
 
         try {
             const response = await fetch('/api/save-products', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ products: p, favorites: f, coupons: c, siteConfig: sc })
+                body: JSON.stringify({ products: p, favorites: f, coupons: c, siteConfig: sc, orders: o })
             });
 
             const data = await response.json();
@@ -204,6 +210,12 @@ export default function AdminDashboard() {
                     onClick={() => setActiveTab('settings')}
                 >
                     ⚙️ Site Settings
+                </button>
+                <button
+                    className={`nav-tab ${activeTab === 'orders' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('orders')}
+                >
+                    📋 Orders ({orders.length})
                 </button>
             </div>
 
@@ -541,6 +553,140 @@ export default function AdminDashboard() {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'orders' && (
+                    <div className="orders-section">
+                        <div className="section-header">
+                            <div>
+                                <h2>📋 Order History</h2>
+                                <p>View and manage customer orders</p>
+                            </div>
+                        </div>
+
+                        {orders.length === 0 ? (
+                            <div className="empty-state">
+                                <p>No orders placed yet.</p>
+                            </div>
+                        ) : (
+                            <div className="orders-list" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                {orders.map(order => (
+                                    <div key={order.id} className="card" style={{ padding: '2rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
+                                            <div>
+                                                <h3 style={{ margin: 0 }}>Order #{order.id}</h3>
+                                                <p style={{ color: '#666', margin: '0.25rem 0' }}>{new Date(order.date).toLocaleString()}</p>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <span style={{
+                                                    padding: '0.5rem 1rem',
+                                                    borderRadius: '20px',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: 'bold',
+                                                    textTransform: 'uppercase',
+                                                    backgroundColor:
+                                                        order.status === 'delivered' ? '#e8f5e9' :
+                                                            order.status === 'pending' ? '#fff3e0' :
+                                                                order.status === 'cancelled' ? '#ffebee' : '#e3f2fd',
+                                                    color:
+                                                        order.status === 'delivered' ? '#2e7d32' :
+                                                            order.status === 'pending' ? '#ef6c00' :
+                                                                order.status === 'cancelled' ? '#c62828' : '#1565c0'
+                                                }}>
+                                                    {order.status}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                            <div>
+                                                <h4 style={{ marginBottom: '0.75rem' }}>👤 Customer Details</h4>
+                                                <p style={{ margin: '0.25rem 0' }}><strong>{order.customer.firstName} {order.customer.lastName}</strong></p>
+                                                <p style={{ margin: '0.25rem 0' }}>📞 {order.customer.mobile}</p>
+                                                {order.customer.email && <p style={{ margin: '0.25rem 0' }}>📧 {order.customer.email}</p>}
+
+                                                <h4 style={{ margin: '1.5rem 0 0.75rem 0' }}>📍 Shipping Address</h4>
+                                                <p style={{ margin: '0.25rem 0' }}>{order.shippingAddress.street}</p>
+                                                {order.shippingAddress.apartment && <p style={{ margin: '0.25rem 0' }}>{order.shippingAddress.apartment}</p>}
+                                                <p style={{ margin: '0.25rem 0' }}>{order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.zipCode}</p>
+                                                <p style={{ margin: '0.25rem 0' }}>{order.shippingAddress.country}</p>
+                                                {order.shippingAddress.latitude && (
+                                                    <p style={{ marginTop: '0.5rem' }}>
+                                                        <a
+                                                            href={`https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}
+                                                        >
+                                                            📍 View on Google Maps
+                                                        </a>
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <h4 style={{ marginBottom: '0.75rem' }}>🛍️ Items</h4>
+                                                <div style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '8px' }}>
+                                                    {order.items.map((item, idx) => (
+                                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                                            <span>{item.name} ({item.weight}) x{item.quantity}</span>
+                                                            <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                                                        </div>
+                                                    ))}
+                                                    <div style={{ borderTop: '1px solid #ddd', marginTop: '1rem', paddingTop: '1rem' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                                            <span>Subtotal</span>
+                                                            <span>₹{order.subtotal.toFixed(2)}</span>
+                                                        </div>
+                                                        {order.discount > 0 && (
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', color: 'green' }}>
+                                                                <span>Discount ({order.couponCode})</span>
+                                                                <span>-₹{order.discount.toFixed(2)}</span>
+                                                            </div>
+                                                        )}
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                                            <span>Shipping</span>
+                                                            <span>₹{order.shipping.toFixed(2)}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                                            <span>Total</span>
+                                                            <span>₹{order.total.toFixed(2)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                    <select
+                                                        value={order.status}
+                                                        onChange={(e) => {
+                                                            const newStatus = e.target.value as Order['status'];
+                                                            fetch('/api/orders', {
+                                                                method: 'PATCH',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ orderId: order.id, status: newStatus })
+                                                            }).then(res => res.json()).then(result => {
+                                                                if (result.success) {
+                                                                    setOrders(orders.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+                                                                }
+                                                            });
+                                                        }}
+                                                        className="category-select"
+                                                        style={{ padding: '0.5rem' }}
+                                                    >
+                                                        <option value="pending">Pending</option>
+                                                        <option value="confirmed">Confirmed</option>
+                                                        <option value="shipped">Shipped</option>
+                                                        <option value="delivered">Delivered</option>
+                                                        <option value="cancelled">Cancelled</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

@@ -5,14 +5,16 @@ import {
     Product,
     Coupon,
     SiteConfig,
+    Order,
     products as initialProducts,
     coupons as initialCoupons,
     customerFavorites as initialFavorites,
-    siteConfig as initialSiteConfig
+    siteConfig as initialSiteConfig,
+    orders as initialOrders
 } from './initial-data';
 
 // Types
-export type { Product, ProductCategory, Coupon, SiteConfig, ProductVariant } from './initial-data';
+export type { Product, ProductCategory, Coupon, SiteConfig, ProductVariant, Order, OrderItem } from './initial-data';
 
 // Data Container Interface
 export interface AppData {
@@ -20,6 +22,7 @@ export interface AppData {
     coupons: Coupon[];
     favorites: string[];
     siteConfig: SiteConfig;
+    orders: Order[];
 }
 
 // Initial Data
@@ -27,7 +30,8 @@ const INITIAL_DATA: AppData = {
     products: initialProducts,
     coupons: initialCoupons,
     favorites: initialFavorites,
-    siteConfig: initialSiteConfig
+    siteConfig: initialSiteConfig,
+    orders: initialOrders
 };
 
 // Mode Detection - Check for Vercel Blob token

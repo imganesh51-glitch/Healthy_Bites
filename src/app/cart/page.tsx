@@ -53,6 +53,51 @@ export default function CartPage() {
 
         const orderId = Math.random().toString(36).substr(2, 6).toUpperCase();
 
+        // Prepare order data for database
+        const orderData = {
+            id: orderId,
+            date: new Date().toISOString(),
+            customer: {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                mobile: formData.mobile
+            },
+            shippingAddress: {
+                street: formData.street,
+                apartment: formData.apartment,
+                city: formData.city,
+                state: formData.state,
+                zipCode: formData.zipCode,
+                country: formData.country,
+                latitude: formData.latitude,
+                longitude: formData.longitude
+            },
+            items: cart.map(item => ({
+                productId: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                weight: item.weight || '',
+                image: item.image
+            })),
+            subtotal: total,
+            discount: discount,
+            couponCode: coupon?.code,
+            shipping: SHIPPING_COST,
+            total: finalTotal + SHIPPING_COST
+        };
+
+        // Save order to database
+        try {
+            await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+        } catch (err) {
+            console.error('Failed to save order to database:', err);
+        }
+
         let message = `🌿 *Aaditya's Healthy Bites*\n`;
         message += `*New Order!* (#${orderId})\n`;
         message += `*Date:* ${new Date().toLocaleDateString()}\n\n`;
@@ -94,7 +139,6 @@ export default function CartPage() {
                 },
                 body: JSON.stringify({
                     message: message,
-                    // phone no longer needed for Telegram as it uses Chat ID from env
                 }),
             });
 
@@ -114,8 +158,6 @@ export default function CartPage() {
 
         } catch (error) {
             console.error('Error sending order:', error);
-            // Even if the notification fails, we consider the "local" order placed for the user's experience
-            // In a real app, you might want to retry or save to local storage
             setLastOrderId(orderId);
             setOrderSuccess(true);
             clearCart();

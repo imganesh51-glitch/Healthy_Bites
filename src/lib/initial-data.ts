@@ -928,3 +928,43 @@ export const siteConfig: SiteConfig = {
     "storyImage": "/images/products-hero.png",
     "founderImage": "/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg"
 };
+
+// Order Types
+export interface OrderItem {
+    productId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    weight: string;
+    image: string;
+}
+
+export interface Order {
+    id: string;
+    date: string;
+    status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+    customer: {
+        firstName: string;
+        lastName: string;
+        mobile: string;
+        email?: string;
+    };
+    shippingAddress: {
+        street: string;
+        apartment?: string;
+        city: string;
+        state: string;
+        zipCode: string;
+        country: string;
+        latitude?: number;
+        longitude?: number;
+    };
+    items: OrderItem[];
+    subtotal: number;
+    discount: number;
+    couponCode?: string;
+    shipping: number;
+    total: number;
+}
+
+export const orders: Order[] = [];

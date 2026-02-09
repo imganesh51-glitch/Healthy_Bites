@@ -6,7 +6,9 @@ export type {
     ProductCategory,
     Coupon,
     SiteConfig,
-    ProductVariant
+    ProductVariant,
+    Order,
+    OrderItem
 } from './initial-data';
 
 // Re-export initial data for components that still use static imports
@@ -15,5 +17,6 @@ export {
     products,
     coupons,
     customerFavorites,
-    siteConfig
+    siteConfig,
+    orders
 } from './initial-data';

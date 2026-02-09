@@ -3,7 +3,10 @@ import { getAppData, saveAppData } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
     try {
-        const { products, favorites, coupons, siteConfig } = await request.json();
+        const { products, favorites, coupons, siteConfig, orders } = await request.json();
+
+        // Get existing data to preserve orders if not provided
+        const existingData = await getAppData();
 
         if (!products || !Array.isArray(products)) {
             return NextResponse.json(
@@ -21,7 +24,8 @@ export async function POST(request: NextRequest) {
                 heroImage: '/images/hero-baby.png',
                 storyImage: '/images/products-hero.png',
                 founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg'
-            }
+            },
+            orders: orders || existingData.orders || []
         });
 
         return NextResponse.json({
@@ -49,6 +53,7 @@ export async function GET() {
             favorites: data.favorites,
             coupons: data.coupons,
             siteConfig: data.siteConfig,
+            orders: data.orders || [],
             count: data.products.length
         });
     } catch (error) {
