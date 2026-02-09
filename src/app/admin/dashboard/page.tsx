@@ -146,14 +146,17 @@ export default function AdminDashboard() {
         const f = overrides.favorites || favorites;
         const c = overrides.coupons || coupons;
         const sc = overrides.siteConfig || siteConfig;
-        const o = overrides.orders || orders;
+        const o = overrides.orders; // ONLY send if explicitly provided in overrides
         const silent = overrides.silent || false;
 
         try {
+            const payload: any = { products: p, favorites: f, coupons: c, siteConfig: sc };
+            if (o !== undefined) payload.orders = o;
+
             const response = await fetch('/api/save-products', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ products: p, favorites: f, coupons: c, siteConfig: sc, orders: o })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();

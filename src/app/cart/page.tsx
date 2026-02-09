@@ -87,21 +87,25 @@ export default function CartPage() {
             total: finalTotal + SHIPPING_COST
         };
 
-        // Save order to database
+        // 1. Save order to database (Dashboard)
+        let dbSaved = false;
         try {
             const res = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderData)
             });
-            if (!res.ok) {
+            if (res.ok) {
+                dbSaved = true;
+            } else {
                 const errorData = await res.json();
-                console.error('Order save failed:', errorData);
+                console.error('Database save failed:', errorData);
             }
         } catch (err) {
             console.error('Failed to save order to database:', err);
         }
 
+        // 2. Prepare and Send Telegram Notification
         const escapeHtml = (unsafe: string) => {
             return unsafe
                 .replace(/&/g, "&amp;")
@@ -126,7 +130,6 @@ export default function CartPage() {
         message += `${escapeHtml(formData.city)}, ${escapeHtml(formData.state)} - ${escapeHtml(formData.zipCode)}\n`;
         message += `${escapeHtml(formData.country)}\n`;
 
-        // Add Google Maps link if location data exists
         if (formData.latitude && formData.longitude) {
             message += `Location: <a href="https://www.google.com/maps?q=${formData.latitude},${formData.longitude}">View on Google Maps</a>\n`;
         }
@@ -144,39 +147,48 @@ export default function CartPage() {
         message += `\n<b>Shipping: ₹${SHIPPING_COST.toFixed(2)}</b>`;
         message += `\n<b>Grand Total: ₹${(finalTotal + SHIPPING_COST).toFixed(2)}</b>`;
 
+        let telegramSent = false;
         try {
             const response = await fetch('/api/send-telegram', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: message,
-                }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message }),
             });
 
             const result = await response.json();
-
             if (result.success) {
-                // Show success state
-                setLastOrderId(orderId);
-                setOrderSuccess(true);
-                clearCart();
+                telegramSent = true;
             } else {
-                console.error('Failed to send Telegram message:', result.error);
-                alert('Order placed locally, but failed to send notification. Please contact support.');
-                setOrderSuccess(true); // Still complete the order transaction locally
-                clearCart();
+                console.error('Telegram notification failed:', result.error);
             }
-
         } catch (error) {
-            console.error('Error sending order:', error);
+            console.error('Error sending telegram:', error);
+        }
+
+        // 3. Handle Overall Result
+        if (dbSaved && telegramSent) {
+            // Perfect success
             setLastOrderId(orderId);
             setOrderSuccess(true);
             clearCart();
-        } finally {
-            setIsSubmitting(false);
+        } else if (dbSaved) {
+            // Saved to DB but notification failed
+            setLastOrderId(orderId);
+            setOrderSuccess(true);
+            clearCart();
+            alert('Order Successful! (Note: Merchant notification failed, but your order is recorded in our system).');
+        } else if (telegramSent) {
+            // Notification sent but DB failed
+            setLastOrderId(orderId);
+            setOrderSuccess(true);
+            clearCart();
+            alert('Order Received! (Note: Local record failed, but our team has been notified via Telegram).');
+        } else {
+            // Both failed
+            alert('Error: Could not place order. Please check your internet or contact us directly on Telegram.');
         }
+
+        setIsSubmitting(false);
     };
 
     const handleLocateMe = () => {
