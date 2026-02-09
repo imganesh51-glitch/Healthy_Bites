@@ -34,10 +34,15 @@ const INITIAL_DATA: AppData = {
     orders: initialOrders
 };
 
-// Mode Detection - Check for Vercel Blob token
-const IS_PROD = !!process.env.BLOB_READ_WRITE_TOKEN;
+// Mode Detection - Use NODE_ENV to determine environment
+// In development, always use local file storage even if BLOB token is present
+const IS_PROD = process.env.NODE_ENV === 'production' && !!process.env.BLOB_READ_WRITE_TOKEN;
 const LOCAL_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'data.json');
 const BLOB_FILENAME = 'app-data.json';
+
+// Log storage mode on startup
+console.log(`[DB] Storage Mode: ${IS_PROD ? 'PRODUCTION (Vercel Blob)' : 'DEVELOPMENT (Local File)'}`);
+console.log(`[DB] Local file path: ${LOCAL_FILE_PATH}`);
 
 /**
  * Fetch all application data
