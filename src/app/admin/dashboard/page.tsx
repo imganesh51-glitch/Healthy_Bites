@@ -179,12 +179,17 @@ export default function AdminDashboard() {
             <header className="dashboard-header">
                 <div className="header-content">
                     <div>
-                        <h1>🎯 Admin Dashboard</h1>
-                        <p>Manage Products & Customer Favorites</p>
+                        <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '2.5rem' }}>🥣</span> Admin Dashboard
+                        </h1>
+                        <p>Welcome back! Here's what's happening with Healthy Bites.</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button onClick={fetchData} className="btn-logout" title="Refresh Data">
+                            🔄
+                        </button>
                         <button onClick={handleSaveAllProducts} className="btn-save">
-                            💾 Save Changes
+                            💾 Save All Changes
                         </button>
                         <button onClick={handleLogout} className="btn-logout">
                             🚪 Logout
@@ -251,6 +256,23 @@ export default function AdminDashboard() {
                                     </option>
                                 ))}
                             </select>
+                            <button
+                                onClick={() => {
+                                    setEditingProduct(null);
+                                    setShowModal(true);
+                                }}
+                                className="btn-primary"
+                                style={{
+                                    marginLeft: 'auto',
+                                    padding: '0.75rem 1.5rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    borderRadius: '12px'
+                                }}
+                            >
+                                <span style={{ fontSize: '1.2rem' }}>+</span> Add New Product
+                            </button>
                         </div>
 
                         {/* Products Grid */}
@@ -752,7 +774,7 @@ interface ProductModalProps {
 function ProductModal({ product, onSave, onClose }: ProductModalProps) {
     const [formData, setFormData] = useState<Partial<Product>>(
         product || {
-            id: '',
+            id: 'prod-' + Math.random().toString(36).substr(2, 9),
             name: '',
             description: '',
             price: 0,
