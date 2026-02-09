@@ -49,12 +49,21 @@ export async function getAppData(): Promise<AppData> {
         if (IS_PROD) {
             // Production: Try fetching from Vercel Blob
             try {
-                const { blobs } = await list({ prefix: BLOB_FILENAME });
-                if (blobs.length > 0) {
-                    const response = await fetch(blobs[0].url);
+                const { blobs } = await list();
+                // Filter for our specific filename pattern and sort by newest first
+                const dataBlobs = blobs
+                    .filter(b => b.pathname.startsWith(BLOB_FILENAME))
+                    .sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
+
+                if (dataBlobs.length > 0) {
+                    console.log(`Fetching newest data from blob: ${dataBlobs[0].url} (Uploaded: ${dataBlobs[0].uploadedAt})`);
+                    const response = await fetch(dataBlobs[0].url);
                     if (response.ok) {
                         data = await response.json();
+                        console.log(`Successfully loaded data. Orders count: ${data.orders?.length || 0}`);
                     }
+                } else {
+                    console.log("No data blobs found, using initial data.");
                 }
             } catch (e) {
                 console.error("Error reading from Blob:", e);
@@ -94,23 +103,33 @@ export async function getAppData(): Promise<AppData> {
 export async function saveAppData(data: AppData): Promise<boolean> {
     try {
         if (IS_PROD) {
+            console.log(`Saving to Blob store. Orders count to save: ${data.orders?.length || 0}`);
+
             // Production: Save to Vercel Blob
-            // First, delete old blob if exists
+            // 1. Upload new blob first (safest)
+            const jsonString = JSON.stringify(data, null, 2);
+            const newBlob = await put(BLOB_FILENAME, jsonString, {
+                access: 'public',
+                contentType: 'application/json',
+                addRandomSuffix: true // Ensure unique URL
+            });
+            console.log(`Saved new blob: ${newBlob.url}`);
+
+            // 2. Cleanup: Delete ALL other blobs with this pathname prefix
             try {
-                const { blobs } = await list({ prefix: BLOB_FILENAME });
-                for (const blob of blobs) {
+                const { blobs } = await list();
+                const oldBlobs = blobs.filter(b =>
+                    b.pathname.startsWith(BLOB_FILENAME) &&
+                    b.url !== newBlob.url
+                );
+
+                console.log(`Cleaning up ${oldBlobs.length} old blobs...`);
+                for (const blob of oldBlobs) {
                     await del(blob.url);
                 }
             } catch (e) {
-                // Ignore delete errors
+                console.warn("Cleanup warning (non-critical):", e);
             }
-
-            // Upload new blob
-            const jsonString = JSON.stringify(data, null, 2);
-            await put(BLOB_FILENAME, jsonString, {
-                access: 'public',
-                contentType: 'application/json'
-            });
         } else {
             // Local Development: Save to filesystem
             fs.writeFileSync(LOCAL_FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
