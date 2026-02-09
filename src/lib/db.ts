@@ -1,10 +1,8 @@
-
-import { createClient } from '@vercel/kv';
+import { put, list, del } from '@vercel/blob';
 import fs from 'fs';
 import path from 'path';
 import {
     Product,
-    ProductCategory,
     Coupon,
     SiteConfig,
     products as initialProducts,
@@ -17,7 +15,7 @@ import {
 export type { Product, ProductCategory, Coupon, SiteConfig, ProductVariant } from './initial-data';
 
 // Data Container Interface
-interface AppData {
+export interface AppData {
     products: Product[];
     coupons: Coupon[];
     favorites: string[];
@@ -32,28 +30,32 @@ const INITIAL_DATA: AppData = {
     siteConfig: initialSiteConfig
 };
 
-// Mode Detection
-const IS_PROD = process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN;
+// Mode Detection - Check for Vercel Blob token
+const IS_PROD = !!process.env.BLOB_READ_WRITE_TOKEN;
 const LOCAL_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'data.json');
-
-// KV Client
-const kv = IS_PROD ? createClient({
-    url: process.env.KV_REST_API_URL!,
-    token: process.env.KV_REST_API_TOKEN!
-}) : null;
+const BLOB_FILENAME = 'app-data.json';
 
 /**
  * Fetch all application data
  */
 export async function getAppData(): Promise<AppData> {
     try {
-        if (IS_PROD && kv) {
-            // Try fetching from KV
-            const data = await kv.get<AppData>('app_data');
-            if (data) return data;
+        if (IS_PROD) {
+            // Production: Try fetching from Vercel Blob
+            try {
+                const { blobs } = await list({ prefix: BLOB_FILENAME });
+                if (blobs.length > 0) {
+                    const response = await fetch(blobs[0].url);
+                    if (response.ok) {
+                        const data = await response.json();
+                        return data as AppData;
+                    }
+                }
+            } catch (e) {
+                console.error("Error reading from Blob:", e);
+            }
 
-            // If empty, initialize with static data
-            await kv.set('app_data', INITIAL_DATA);
+            // If no blob exists, return initial data (will be saved on first admin save)
             return INITIAL_DATA;
         } else {
             // Local Development: filesystem/JSON
@@ -65,8 +67,6 @@ export async function getAppData(): Promise<AppData> {
                     console.error("Error reading local data.json:", e);
                 }
             }
-
-            // Fallback to initial static data
             return INITIAL_DATA;
         }
     } catch (error) {
@@ -80,10 +80,26 @@ export async function getAppData(): Promise<AppData> {
  */
 export async function saveAppData(data: AppData): Promise<boolean> {
     try {
-        if (IS_PROD && kv) {
-            await kv.set('app_data', data);
+        if (IS_PROD) {
+            // Production: Save to Vercel Blob
+            // First, delete old blob if exists
+            try {
+                const { blobs } = await list({ prefix: BLOB_FILENAME });
+                for (const blob of blobs) {
+                    await del(blob.url);
+                }
+            } catch (e) {
+                // Ignore delete errors
+            }
+
+            // Upload new blob
+            const jsonString = JSON.stringify(data, null, 2);
+            await put(BLOB_FILENAME, jsonString, {
+                access: 'public',
+                contentType: 'application/json'
+            });
         } else {
-            // Local Development
+            // Local Development: Save to filesystem
             fs.writeFileSync(LOCAL_FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
         }
         return true;
@@ -94,7 +110,7 @@ export async function saveAppData(data: AppData): Promise<boolean> {
 }
 
 /**
- * Helper to get just products (common use case)
+ * Helper to get just products
  */
 export async function getProducts(): Promise<Product[]> {
     const data = await getAppData();
