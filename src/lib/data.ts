@@ -62,7 +62,7 @@ export const products: Product[] = [
         "name": "Sathumava",
         "description": "Traditional health mix powder.",
         "price": 300,
-        "image": "/images/products/WhatsApp Image 2026-02-08 at 9.01.45 PM.jpeg",
+        "image": "https://res.cloudinary.com/dwojczwh3/image/upload/v1770621323/products/rcclkvg14lirh068ortn.png",
         "category": "Baby's First Food",
         "ingredients": [
             "Sprouted Ragi",
@@ -924,7 +924,7 @@ export interface SiteConfig {
 }
 
 export const siteConfig: SiteConfig = {
-    heroImage: '/images/hero-baby.png',
-    storyImage: '/images/products-hero.png',
-    founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg'
+    "heroImage": "/images/hero-baby.png",
+    "storyImage": "/images/products-hero.png",
+    "founderImage": "/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg"
 };

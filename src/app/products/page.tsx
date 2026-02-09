@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { products } from '../../lib/data';
-
+import './products.css';
 
 export default function ProductsPage() {
     const [filter, setFilter] = useState<string>('all');
