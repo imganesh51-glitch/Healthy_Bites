@@ -7,11 +7,26 @@ import { useCart } from '../../context/CartContext';
 import { useState } from 'react';
 
 export default function CartPage() {
-    const { cart, removeFromCart, updateQuantity, clearCart, total } = useCart();
+    const { cart, removeFromCart, updateQuantity, clearCart, total, discount, finalTotal, removeCoupon, coupon, validateAndApplyCoupon } = useCart();
+    const [couponCode, setCouponCode] = useState('');
+    const [couponError, setCouponError] = useState('');
     const [showCheckout, setShowCheckout] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState(false);
     const [lastOrderId, setLastOrderId] = useState('');
+
+    const handleApplyCoupon = async () => {
+        setCouponError('');
+        const code = couponCode.trim();
+        if (!code) return;
+
+        const result = await validateAndApplyCoupon(code);
+        if (result.success) {
+            setCouponCode('');
+        } else {
+            setCouponError(result.message);
+        }
+    };
 
     // Updated form state including new fields for the Bombas-style layout
     const [formData, setFormData] = useState({
@@ -65,8 +80,11 @@ export default function CartPage() {
         });
 
         message += `\n*Subtotal: ₹${total.toFixed(2)}*`;
+        if (discount > 0) {
+            message += `\n*Discount: -₹${discount.toFixed(2)} (${coupon?.code})*`;
+        }
         message += `\n*Shipping: ₹${SHIPPING_COST.toFixed(2)}*`;
-        message += `\n*Grand Total: ₹${(total + SHIPPING_COST).toFixed(2)}*`;
+        message += `\n*Grand Total: ₹${(finalTotal + SHIPPING_COST).toFixed(2)}*`;
 
         try {
             const response = await fetch('/api/send-telegram', {
@@ -247,6 +265,12 @@ export default function CartPage() {
                             <span>Subtotal</span>
                             <span style={{ fontWeight: 600, color: '#333' }}>₹{total.toFixed(2)}</span>
                         </div>
+                        {discount > 0 && (
+                            <div className="summary-row" style={{ color: 'green' }}>
+                                <span>Discount ({coupon?.code})</span>
+                                <span style={{ fontWeight: 600 }}>-₹{discount.toFixed(2)}</span>
+                            </div>
+                        )}
                         <div className="summary-row">
                             <span>Shipping</span>
                             <span style={{ fontWeight: 600, color: '#333' }}>₹{SHIPPING_COST.toFixed(2)}</span>
@@ -255,7 +279,7 @@ export default function CartPage() {
                             <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>Total</span>
                             <div style={{ display: 'flex', alignItems: 'baseline' }}>
                                 <span style={{ fontSize: '0.85rem', color: '#777', marginRight: '0.5rem' }}>INR</span>
-                                <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>₹{(total + SHIPPING_COST).toFixed(2)}</span>
+                                <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>₹{(finalTotal + SHIPPING_COST).toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
@@ -542,10 +566,39 @@ export default function CartPage() {
                         <p style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>
                             Subtotal: ₹{total.toFixed(2)}
                         </p>
+
+                        {/* Coupon Section */}
+                        <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                            {discount > 0 ? (
+                                <div style={{ color: 'green', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span>Coupon <strong>{coupon?.code}</strong> applied: -₹{discount.toFixed(2)}</span>
+                                    <button onClick={removeCoupon} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#999' }}>✕</button>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Coupon Code"
+                                        value={couponCode}
+                                        onChange={(e) => setCouponCode(e.target.value)}
+                                        style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                                    />
+                                    <button
+                                        onClick={handleApplyCoupon}
+                                        className="btn-secondary"
+                                        style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                                    >
+                                        Apply
+                                    </button>
+                                </div>
+                            )}
+                            {couponError && <span style={{ color: 'red', fontSize: '0.85rem' }}>{couponError}</span>}
+                        </div>
+
                         <p style={{ fontSize: '1rem', color: '#666', marginBottom: '1rem' }}>
                             Shipping: ₹{SHIPPING_COST.toFixed(2)}
                             <br />
-                            <span style={{ fontWeight: 'bold' }}>Grand Total: ₹{(total + SHIPPING_COST).toFixed(2)}</span>
+                            <span style={{ fontWeight: 'bold' }}>Grand Total: ₹{(finalTotal + SHIPPING_COST).toFixed(2)}</span>
                         </p>
 
                         {total < MIN_ORDER_VALUE && (

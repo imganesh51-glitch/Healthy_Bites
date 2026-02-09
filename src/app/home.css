@@ -1,0 +1,159 @@
+/* Hero Section */
+.hero-section {
+    position: relative;
+    height: 90vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(to right, rgba(253, 251, 247, 0.9), rgba(253, 251, 247, 0.4));
+    overflow: hidden;
+}
+
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    margin-left: 5%;
+    padding: 0 1rem;
+}
+
+.hero-title {
+    font-size: 4rem;
+    color: var(--color-text);
+    margin-bottom: 1.5rem;
+    line-height: 1.1;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--color-text-light);
+    margin-bottom: 2.5rem;
+    max-width: 480px;
+}
+
+/* Trust Badges */
+.trust-badges-section {
+    padding: 4rem 0;
+    background: white;
+}
+
+.badges-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.badge-card {
+    text-align: center;
+    min-width: 200px;
+    background: var(--color-bg);
+}
+
+/* Featured Products */
+.featured-section {
+    padding: 6rem 0;
+}
+
+.featured-title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    color: var(--color-primary);
+}
+
+.products-grid-home {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+/* Story Teaser */
+.story-section {
+    padding: 6rem 0;
+    background: var(--color-secondary);
+    color: #004d40;
+}
+
+.story-container {
+    display: flex;
+    align-items: center;
+    gap: 4rem;
+    flex-wrap: wrap;
+}
+
+.story-content {
+    flex: 1;
+    min-width: 300px;
+}
+
+.story-title {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+}
+
+.story-image-wrapper {
+    flex: 1;
+    min-width: 300px;
+    height: 400px;
+    position: relative;
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+    .hero-section {
+        height: auto;
+        min-height: 80vh;
+        padding: 4rem 0;
+        align-items: flex-start;
+    }
+
+    .hero-content {
+        margin-left: 0;
+        text-align: center;
+        margin-top: 2rem;
+        max-width: 100%;
+    }
+
+    .hero-title {
+        font-size: 2.5rem !important;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem !important;
+        margin: 0 auto 2rem auto;
+    }
+
+    .featured-section,
+    .story-section {
+        padding: 3rem 0;
+    }
+
+    .featured-title {
+        font-size: 2rem !important;
+    }
+
+    .story-title {
+        font-size: 2rem !important;
+    }
+
+    .story-container {
+        gap: 2rem;
+    }
+
+    .story-image-wrapper {
+        height: 300px;
+    }
+}

@@ -97,3 +97,9 @@ h1, h2, h3, h4, h5, h6 {
 @media (prefers-color-scheme: dark) {
   /* Optional: Add dark mode overrides if requested, keeping it light/fresh for baby food by default */
 }
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+}

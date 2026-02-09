@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { products } from '../lib/data';
+import './home.css';
 
 export default function Home() {
   const featuredProducts = products.slice(0, 3);
@@ -8,22 +9,8 @@ export default function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <section style={{
-        position: 'relative',
-        height: '90vh',
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        background: 'linear-gradient(to right, rgba(253, 251, 247, 0.9), rgba(253, 251, 247, 0.4))'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: -1
-        }}>
+      <section className="hero-section">
+        <div className="hero-background">
           <Image
             src="/images/hero-baby.png"
             alt="Happy baby eating"
@@ -33,22 +20,12 @@ export default function Home() {
           />
         </div>
 
-        <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: '600px', marginLeft: '5%' }}>
-          <h1 style={{
-            fontSize: '4rem',
-            color: 'var(--color-text)',
-            marginBottom: '1.5rem',
-            lineHeight: 1.1
-          }}>
+        <div className="container hero-content">
+          <h1 className="hero-title">
             Pure Love in <br />
             <span style={{ color: 'var(--color-primary)' }}>Every Spoonful</span>
           </h1>
-          <p style={{
-            fontSize: '1.25rem',
-            color: 'var(--color-text-light)',
-            marginBottom: '2.5rem',
-            maxWidth: '480px'
-          }}>
+          <p className="hero-subtitle">
             Organic, preservative-free baby food designed by pediatricians and crafted by chefs. Give your baby the healthiest start.
           </p>
           <Link href="/products" className="btn btn-primary" style={{ fontSize: '1.1rem', padding: '16px 32px' }}>
@@ -58,10 +35,10 @@ export default function Home() {
       </section>
 
       {/* Trust Badges */}
-      <section style={{ padding: '4rem 0', background: 'white' }}>
-        <div className="container" style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '2rem' }}>
+      <section className="trust-badges-section">
+        <div className="container badges-container">
           {['100% Organic', 'No Added Sugar', 'Pediatrician Approved', 'Freshly Made'].map((badge) => (
-            <div key={badge} className="card" style={{ textAlign: 'center', minWidth: '200px', background: 'var(--color-bg)' }}>
+            <div key={badge} className="card badge-card">
               <h3 style={{ color: 'var(--color-secondary)', fontSize: '1.5rem', marginBottom: '0.5rem' }}>✓</h3>
               <p style={{ fontWeight: 600 }}>{badge}</p>
             </div>
@@ -70,14 +47,10 @@ export default function Home() {
       </section>
 
       {/* Featured Products */}
-      <section style={{ padding: '6rem 0' }}>
+      <section className="featured-section">
         <div className="container">
-          <h2 style={{ textAlign: 'center', fontSize: '2.5rem', marginBottom: '3rem', color: 'var(--color-primary)' }}>Customer Favorites</h2>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '2rem'
-          }}>
+          <h2 className="featured-title">Customer Favorites</h2>
+          <div className="products-grid-home">
             {featuredProducts.map(product => (
               <div key={product.id} className="card product-card" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div style={{ position: 'relative', height: '250px', marginBottom: '1.5rem', borderRadius: '15px', overflow: 'hidden' }}>
@@ -121,10 +94,10 @@ export default function Home() {
       </section>
 
       {/* Story Teaser */}
-      <section style={{ padding: '6rem 0', background: 'var(--color-secondary)', color: '#004d40' }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', gap: '4rem', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '300px' }}>
-            <h2 style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>Our Promise <br /> to You and Your Baby</h2>
+      <section className="story-section">
+        <div className="container story-container">
+          <div className="story-content">
+            <h2 className="story-title">Our Promise <br /> to You and Your Baby</h2>
             <p style={{ fontSize: '1.1rem', marginBottom: '2rem', opacity: 0.9 }}>
               Started by parents, for parents. We believe that every spoonful should be a step towards a healthier future. No shortcuts, just pure, wholesome ingredients sourced from trusted organic farms.
             </p>

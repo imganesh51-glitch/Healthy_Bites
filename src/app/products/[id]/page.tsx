@@ -3,9 +3,10 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { products } from '../../../lib/data'; // relative path or @/lib/data
+import { products } from '../../../lib/data';
 import { useCart } from '../../../context/CartContext';
 import { useState } from 'react';
+import './product-detail.css';
 
 export default function ProductDetailPage() {
     const params = useParams();
@@ -38,14 +39,14 @@ export default function ProductDetailPage() {
     };
 
     return (
-        <div className="container" style={{ padding: '6rem 0' }}>
-            <Link href="/products" style={{ display: 'inline-block', marginBottom: '2rem', color: 'var(--color-text-light)' }}>
+        <div className="container product-detail-wrapper">
+            <Link href="/products" className="back-link">
                 &larr; Back to Menu
             </Link>
 
-            <div style={{ display: 'flex', gap: '4rem', flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: '300px', background: '#f9f9f9', borderRadius: '20px', padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ position: 'relative', width: '100%', height: '400px' }}>
+            <div className="product-detail-container">
+                <div className="detail-image-section">
+                    <div className="detail-image-wrapper">
                         <Image
                             src={product.image}
                             alt={product.name}
@@ -56,51 +57,28 @@ export default function ProductDetailPage() {
                     </div>
                 </div>
 
-                <div style={{ flex: 1, minWidth: '300px' }}>
-                    <span style={{
-                        background: 'var(--color-secondary)',
-                        color: '#006644',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        display: 'inline-block',
-                        marginBottom: '1rem'
-                    }}>{product.category}</span>
+                <div className="detail-info-section">
+                    <span className="detail-category">{product.category}</span>
 
-                    <h1 style={{ fontSize: '3rem', marginBottom: '1rem', color: 'var(--color-primary)' }}>{product.name}</h1>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 600 }}>₹{currentPrice}</p>
+                    <h1 className="detail-title">{product.name}</h1>
+                    <div className="detail-price-row">
+                        <p className="detail-price">₹{currentPrice}</p>
                         {currentWeight && (
-                            <span style={{
-                                fontSize: '1.1rem',
-                                background: '#f0f0f0',
-                                padding: '4px 12px',
-                                borderRadius: '20px',
-                                color: '#555'
-                            }}>
+                            <span className="detail-weight">
                                 {currentWeight}
                             </span>
                         )}
                     </div>
 
                     {product.variants && product.variants.length > 0 && (
-                        <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', color: 'var(--color-text-light)' }}>Select Size:</h3>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div className="variant-selector">
+                            <h3 className="variant-label">Select Size:</h3>
+                            <div className="variant-options">
                                 {product.variants.map((v) => (
                                     <button
                                         key={v.weight}
                                         onClick={() => setSelectedVariant(v)}
-                                        style={{
-                                            padding: '8px 16px',
-                                            borderRadius: '8px',
-                                            border: selectedVariant?.weight === v.weight ? '2px solid var(--color-primary)' : '1px solid #ddd',
-                                            background: 'white',
-                                            color: selectedVariant?.weight === v.weight ? 'var(--color-primary)' : 'var(--color-text)',
-                                            cursor: 'pointer',
-                                            fontWeight: selectedVariant?.weight === v.weight ? 700 : 400
-                                        }}
+                                        className={`variant-btn ${selectedVariant?.weight === v.weight ? 'active' : ''}`}
                                     >
                                         {v.weight}
                                     </button>
@@ -109,67 +87,41 @@ export default function ProductDetailPage() {
                         </div>
                     )}
 
-                    <p style={{ fontSize: '1.1rem', color: 'var(--color-text-light)', marginBottom: '2rem', lineHeight: 1.6 }}>
+                    <p className="detail-description">
                         {product.description}
                     </p>
 
-                    <div style={{ marginBottom: '2rem' }}>
-                        <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Ingredients:</h3>
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div className="ingredients-section">
+                        <h3 className="ingredients-title">Ingredients:</h3>
+                        <div className="ingredients-list">
                             {product.ingredients.map(ing => (
-                                <span key={ing} style={{
-                                    background: 'white',
-                                    border: '1px solid #eee',
-                                    padding: '8px 16px',
-                                    borderRadius: '20px',
-                                    fontSize: '0.9rem'
-                                }}>
+                                <span key={ing} className="ingredient-pill">
                                     {ing}
                                 </span>
                             ))}
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            border: '1px solid #ddd',
-                            borderRadius: '8px',
-                            overflow: 'hidden'
-                        }}>
+                    <div className="add-to-cart-row">
+                        <div className="quantity-selector">
                             <button
                                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                style={{
-                                    padding: '1rem',
-                                    background: 'white',
-                                    border: 'none',
-                                    fontSize: '1.2rem',
-                                    cursor: 'pointer'
-                                }}
+                                className="qty-btn"
                             >
                                 -
                             </button>
-                            <span style={{ padding: '0 1rem', fontSize: '1.2rem', fontWeight: 600 }}>{quantity}</span>
+                            <span className="qty-display">{quantity}</span>
                             <button
                                 onClick={() => setQuantity(Math.min(10, quantity + 1))}
-                                style={{
-                                    padding: '1rem',
-                                    background: 'white',
-                                    border: 'none',
-                                    fontSize: '1.2rem',
-                                    cursor: 'pointer'
-                                }}
+                                className="qty-btn"
                             >
                                 +
                             </button>
                         </div>
                         <button
                             onClick={handleAddToCart}
-                            className="btn btn-primary"
+                            className="add-btn"
                             style={{
-                                flex: 1,
-                                fontSize: '1.1rem',
                                 backgroundColor: added ? 'var(--color-secondary)' : 'var(--color-primary)',
                                 color: added ? '#006644' : 'white'
                             }}
