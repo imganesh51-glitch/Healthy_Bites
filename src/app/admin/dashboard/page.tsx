@@ -188,32 +188,22 @@ export default function AdminDashboard() {
                     📦 All Products ({products.length})
                 </button>
                 <button
-                    className={`tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
+                    className={`nav-tab ${activeTab === 'favorites' ? 'active' : ''}`}
                     onClick={() => setActiveTab('favorites')}
                 >
                     ❤️ Favorites
                 </button>
                 <button
-                    className={`tab-btn ${activeTab === 'coupons' ? 'active' : ''}`}
+                    className={`nav-tab ${activeTab === 'coupons' ? 'active' : ''}`}
                     onClick={() => setActiveTab('coupons')}
                 >
                     🎟️ Coupons
                 </button>
                 <button
-                    className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+                    className={`nav-tab ${activeTab === 'settings' ? 'active' : ''}`}
                     onClick={() => setActiveTab('settings')}
                 >
                     ⚙️ Site Settings
-                </button>
-                <button
-                    className={`nav-tab ${activeTab === 'add' ? 'active' : ''}`}
-                    onClick={() => {
-                        setActiveTab('add');
-                        setEditingProduct(null);
-                        setShowModal(true);
-                    }}
-                >
-                    ➕ Add New Product
                 </button>
             </div>
 
