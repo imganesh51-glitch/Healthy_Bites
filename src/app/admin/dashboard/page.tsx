@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { products as initialProducts, coupons as initialCoupons, siteConfig as initialSiteConfig, Coupon, Product, ProductCategory, ProductVariant, SiteConfig } from '../../../lib/data';
+import { Coupon, Product, ProductCategory, ProductVariant, SiteConfig } from '../../../lib/data';
 import './dashboard.css';
 
 export default function AdminDashboard() {
     const router = useRouter();
-    const [products, setProducts] = useState<Product[]>(initialProducts);
-    const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons || []);
-    const [siteConfig, setSiteConfig] = useState<SiteConfig>(initialSiteConfig || { heroImage: '/images/hero-baby.png', storyImage: '/images/products-hero.png' });
+    const [products, setProducts] = useState<Product[]>([]);
+    const [coupons, setCoupons] = useState<Coupon[]>([]);
+    const [siteConfig, setSiteConfig] = useState<SiteConfig>({ heroImage: '/images/hero-baby.png', storyImage: '/images/products-hero.png', founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg' });
     const [activeTab, setActiveTab] = useState<'products' | 'favorites' | 'coupons' | 'settings' | 'add'>('products');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -18,8 +18,28 @@ export default function AdminDashboard() {
     const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
     const [showCouponModal, setShowCouponModal] = useState(false);
     const [showModal, setShowModal] = useState(false);
-    const [favorites, setFavorites] = useState<string[]>(['rice-cereal', 'sathumava', 'sprouted-ragi-almond-cashew']);
+    const [favorites, setFavorites] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch data from API on mount
+    useEffect(() => {
+        fetch('/api/save-products')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setProducts(data.products || []);
+                    setCoupons(data.coupons || []);
+                    setFavorites(data.favorites || []);
+                    setSiteConfig(data.siteConfig || { heroImage: '/images/hero-baby.png', storyImage: '/images/products-hero.png', founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg' });
+                }
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error('Error loading data:', err);
+                setLoading(false);
+            });
+    }, []);
 
     const handleSiteImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: keyof SiteConfig) => {
         const file = e.target.files?.[0];

@@ -1,17 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { products } from '../../lib/data';
+import { Product } from '../../lib/data';
 import './products.css';
 
 export default function ProductsPage() {
+    const [products, setProducts] = useState<Product[]>([]);
     const [filter, setFilter] = useState<string>('all');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('/api/products')
+            .then(res => res.json())
+            .then(data => {
+                setProducts(data.products || []);
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
+    }, []);
 
     const filteredProducts = filter === 'all'
         ? products
-        : products.filter(p => p.category === filter);
+        : products.filter((p: Product) => p.category === filter);
 
     const categories = [
         "all",
@@ -24,6 +36,14 @@ export default function ProductsPage() {
         "Nuts and Seeds",
         "Healthy Flours"
     ];
+
+    if (loading) {
+        return (
+            <div className="container products-wrapper" style={{ textAlign: 'center', padding: '4rem' }}>
+                <p>Loading products...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="container products-wrapper">
@@ -52,7 +72,7 @@ export default function ProductsPage() {
             </div>
 
             <div className="products-grid">
-                {filteredProducts.map(product => (
+                {filteredProducts.map((product: Product) => (
                     <Link href={`/products/${product.id}`} key={product.id} className="product-link">
                         <div className="card product-card" style={{ height: '100%', padding: '0.5rem' }}>
                             <div className="product-card-inner">

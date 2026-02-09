@@ -1,7 +1,8 @@
 import Image from 'next/image';
-import { siteConfig } from '../../lib/data';
+import { getSiteConfig } from '../../lib/db';
 
-export default function StoryPage() {
+export default async function StoryPage() {
+    const siteConfig = await getSiteConfig();
     return (
         <div>
             <section style={{

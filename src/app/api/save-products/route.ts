@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { getAppData, saveAppData } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
     try {
@@ -13,12 +12,17 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Generate TypeScript content
-        const content = generateDataFile(products, favorites, coupons, siteConfig);
-
-        // Write to data.ts file
-        const filepath = join(process.cwd(), 'src', 'lib', 'data.ts');
-        await writeFile(filepath, content, 'utf-8');
+        // Save to KV/JSON store
+        await saveAppData({
+            products,
+            coupons: coupons || [],
+            favorites: favorites || [],
+            siteConfig: siteConfig || {
+                heroImage: '/images/hero-baby.png',
+                storyImage: '/images/products-hero.png',
+                founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg'
+            }
+        });
 
         return NextResponse.json({
             success: true,
@@ -29,7 +33,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Error saving products:', error);
         return NextResponse.json(
-            { error: 'Failed to save products' },
+            { error: `Failed to save products: ${error instanceof Error ? error.message : String(error)}` },
             { status: 500 }
         );
     }
@@ -37,16 +41,15 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
     try {
-        // Import the current products data
-        const { products, customerFavorites, coupons, siteConfig } = await import('@/lib/data');
+        const data = await getAppData();
 
         return NextResponse.json({
             success: true,
-            products,
-            favorites: customerFavorites,
-            coupons: coupons || [],
-            siteConfig: siteConfig || { heroImage: '/images/hero-baby.png', storyImage: '/images/products-hero.png', founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg' },
-            count: products.length
+            products: data.products,
+            favorites: data.favorites,
+            coupons: data.coupons,
+            siteConfig: data.siteConfig,
+            count: data.products.length
         });
     } catch (error) {
         console.error('Error loading products:', error);
@@ -55,60 +58,4 @@ export async function GET() {
             { status: 500 }
         );
     }
-}
-
-function generateDataFile(products: any[], favorites: string[], coupons: any[] = [], siteConfig: any = { heroImage: '/images/hero-baby.png', storyImage: '/images/products-hero.png', founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg' }) {
-    return `export interface ProductVariant {
-    weight: string;
-    price: number;
-}
-
-export type ProductCategory =
-    | "Baby's First Food"
-    | "Porridge Menu"
-    | "Dosa Premix Menu"
-    | "Pancake Premix Menu"
-    | "Laddus"
-    | "Healthy Fats / Butters"
-    | "Nuts and Seeds"
-    | "Healthy Flours";
-
-export interface Product {
-    id: string;
-    name: string;
-    description: string;
-    price: number; // Base price or starting price
-    image: string;
-    category: ProductCategory;
-    ingredients: string[];
-    ageGroup: '6m+' | '8m+' | '12m+' | '18m+';
-    weight?: string; // Default weight
-    variants?: ProductVariant[];
-    isFavorite?: boolean;
-}
-
-export const products: Product[] = ${JSON.stringify(products, null, 4)};
-
-export interface Coupon {
-    code: string;
-    description?: string;
-    discountType: 'percentage' | 'fixed';
-    discountValue: number;
-    applicability: 'all' | 'category' | 'product' | 'variant';
-    target?: string;
-    active: boolean;
-}
-
-export const coupons: Coupon[] = ${JSON.stringify(coupons, null, 4)};
-
-export const customerFavorites: string[] = ${JSON.stringify(favorites || [], null, 4)};
-
-export interface SiteConfig {
-    heroImage: string;
-    storyImage: string;
-    founderImage: string;
-}
-
-export const siteConfig: SiteConfig = ${JSON.stringify(siteConfig, null, 4)};
-`;
 }

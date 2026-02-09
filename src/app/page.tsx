@@ -1,9 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { products, siteConfig } from '../lib/data';
+import { getProducts, getSiteConfig } from '../lib/db';
 import './home.css';
 
-export default function Home() {
+export default async function Home() {
+  const products = await getProducts();
+  const siteConfig = await getSiteConfig();
   const featuredProducts = products.slice(0, 3);
 
   return (
