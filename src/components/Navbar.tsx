@@ -5,10 +5,15 @@ import { useCart } from '../context/CartContext';
 import { useState } from 'react';
 import './navbar.css';
 
+import { usePathname } from 'next/navigation';
+
 export default function Navbar() {
+  const pathname = usePathname();
   const { cart } = useCart();
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const [isOpen, setIsOpen] = useState(false);
+
+  if (pathname.startsWith('/admin')) return null;
 
   return (
     <nav className="navbar">

@@ -24,10 +24,24 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate file type
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        if (!validTypes.includes(file.type)) {
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'image/avif'];
+
+        // Check MIME type
+        let isValidType = validTypes.includes(file.type);
+
+        // Fallback: Check extension if MIME type is missing or not in strict list (some OS/Browsers issues)
+        if (!isValidType) {
+            const ext = file.name.split('.').pop()?.toLowerCase();
+            const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'avif'];
+            if (ext && validExtensions.includes(ext)) {
+                isValidType = true;
+            }
+        }
+
+        if (!isValidType) {
+            console.error(`Invalid file upload attempt. Type: '${file.type}', Name: '${file.name}'`);
             return NextResponse.json(
-                { error: 'Invalid file type. Only JPEG, PNG, and WebP are allowed.' },
+                { error: `Invalid file type (${file.type || 'unknown'}). Allowed: JPEG, PNG, WebP, GIF, SVG, AVIF` },
                 { status: 400 }
             );
         }
@@ -66,7 +80,7 @@ export async function POST(request: NextRequest) {
             } catch (cloudinaryError) {
                 console.error('Cloudinary upload error:', cloudinaryError);
                 return NextResponse.json(
-                    { error: 'Failed to upload to Cloudinary' },
+                    { error: `Cloudinary Error: ${cloudinaryError instanceof Error ? cloudinaryError.message : String(cloudinaryError)}` },
                     { status: 500 }
                 );
             }
@@ -99,7 +113,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Error uploading file:', error);
         return NextResponse.json(
-            { error: 'Failed to upload file' },
+            { error: `Server Error: ${error instanceof Error ? error.message : String(error)}` },
             { status: 500 }
         );
     }

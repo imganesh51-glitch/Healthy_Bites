@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { products } from '../lib/data';
+import { products, siteConfig } from '../lib/data';
 import './home.css';
 
 export default function Home() {
@@ -12,7 +12,7 @@ export default function Home() {
       <section className="hero-section">
         <div className="hero-background">
           <Image
-            src="/images/hero-baby.png"
+            src={siteConfig?.heroImage || '/images/hero-baby.png'}
             alt="Happy baby eating"
             fill
             style={{ objectFit: 'cover', objectPosition: 'center 20%' }}
@@ -105,7 +105,7 @@ export default function Home() {
           </div>
           <div style={{ flex: 1, minWidth: '300px', height: '400px', position: 'relative', borderRadius: '30px', overflow: 'hidden', boxShadow: 'var(--shadow-lg)' }}>
             <Image
-              src="/images/products-hero.png" // Using products hero as substitute for "farm"
+              src={siteConfig?.storyImage || '/images/products-hero.png'}
               alt="Ingredients"
               fill
               style={{ objectFit: 'cover' }}

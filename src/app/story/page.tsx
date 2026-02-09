@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { siteConfig } from '../../lib/data';
 
 export default function StoryPage() {
     return (
@@ -31,7 +32,7 @@ export default function StoryPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: '300px', position: 'relative', height: '500px', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--shadow-lg)' }}>
                     <Image
-                        src="/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg"
+                        src={siteConfig?.founderImage || '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg'}
                         alt="Aaditya's Healthy Bites Story"
                         fill
                         style={{ objectFit: 'contain' }}

@@ -3,14 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { products as initialProducts, coupons as initialCoupons, Coupon, Product, ProductCategory, ProductVariant } from '../../../lib/data';
+import { products as initialProducts, coupons as initialCoupons, siteConfig as initialSiteConfig, Coupon, Product, ProductCategory, ProductVariant, SiteConfig } from '../../../lib/data';
 import './dashboard.css';
 
 export default function AdminDashboard() {
     const router = useRouter();
     const [products, setProducts] = useState<Product[]>(initialProducts);
     const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons || []);
-    const [activeTab, setActiveTab] = useState<'products' | 'favorites' | 'coupons' | 'add'>('products');
+    const [siteConfig, setSiteConfig] = useState<SiteConfig>(initialSiteConfig || { heroImage: '/images/hero-baby.png', storyImage: '/images/products-hero.png' });
+    const [activeTab, setActiveTab] = useState<'products' | 'favorites' | 'coupons' | 'settings' | 'add'>('products');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -18,6 +19,37 @@ export default function AdminDashboard() {
     const [showCouponModal, setShowCouponModal] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [favorites, setFavorites] = useState<string[]>(['rice-cereal', 'sathumava', 'sprouted-ragi-almond-cashew']);
+    const [uploading, setUploading] = useState(false);
+
+    const handleSiteImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: keyof SiteConfig) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', file);
+
+        try {
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formDataUpload
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const newConfig = { ...siteConfig, [field]: data.url };
+                setSiteConfig(newConfig);
+                alert('✅ Image uploaded successfully!');
+            } else {
+                alert('❌ Failed to upload image: ' + data.error);
+            }
+        } catch (error) {
+            alert('❌ Error uploading image: ' + error);
+        } finally {
+            setUploading(false);
+        }
+    };
 
     useEffect(() => {
         const isAuthenticated = localStorage.getItem('adminAuthenticated');
@@ -76,12 +108,18 @@ export default function AdminDashboard() {
         setEditingProduct(null);
     };
 
-    const saveData = async (currentProducts: Product[], currentFavorites: string[], currentCoupons: Coupon[], silent = false) => {
+    const saveData = async (overrides: { products?: Product[], favorites?: string[], coupons?: Coupon[], siteConfig?: SiteConfig, silent?: boolean } = {}) => {
+        const p = overrides.products || products;
+        const f = overrides.favorites || favorites;
+        const c = overrides.coupons || coupons;
+        const sc = overrides.siteConfig || siteConfig;
+        const silent = overrides.silent || false;
+
         try {
             const response = await fetch('/api/save-products', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ products: currentProducts, favorites: currentFavorites, coupons: currentCoupons })
+                body: JSON.stringify({ products: p, favorites: f, coupons: c, siteConfig: sc })
             });
 
             const data = await response.json();
@@ -99,7 +137,7 @@ export default function AdminDashboard() {
         }
     };
 
-    const handleSaveAllProducts = () => saveData(products, favorites, coupons);
+    const handleSaveAllProducts = () => saveData();
 
     return (
         <div className="admin-dashboard">
@@ -130,16 +168,22 @@ export default function AdminDashboard() {
                     📦 All Products ({products.length})
                 </button>
                 <button
-                    className={`nav-tab ${activeTab === 'favorites' ? 'active' : ''}`}
+                    className={`tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
                     onClick={() => setActiveTab('favorites')}
                 >
-                    ⭐ Customer Favorites ({favorites.length})
+                    ❤️ Favorites
                 </button>
                 <button
-                    className={`nav-tab ${activeTab === 'coupons' ? 'active' : ''}`}
+                    className={`tab-btn ${activeTab === 'coupons' ? 'active' : ''}`}
                     onClick={() => setActiveTab('coupons')}
                 >
-                    🎟️ Coupons ({coupons.length})
+                    🎟️ Coupons
+                </button>
+                <button
+                    className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('settings')}
+                >
+                    ⚙️ Site Settings
                 </button>
                 <button
                     className={`nav-tab ${activeTab === 'add' ? 'active' : ''}`}
@@ -330,7 +374,7 @@ export default function AdminDashboard() {
                                                     if (confirm('Delete this coupon?')) {
                                                         const newCoupons = coupons.filter(c => c.code !== coupon.code);
                                                         setCoupons(newCoupons);
-                                                        saveData(products, favorites, newCoupons, true);
+                                                        saveData({ coupons: newCoupons, silent: true });
                                                     }
                                                 }}
                                                 className="btn-icon delete"
@@ -369,6 +413,126 @@ export default function AdminDashboard() {
                         )}
                     </div>
                 )}
+
+                {activeTab === 'settings' && (
+                    <div className="settings-section">
+                        <div className="section-header">
+                            <div>
+                                <h2>⚙️ Site Settings</h2>
+                                <p>Manage website images and configuration</p>
+                            </div>
+                        </div>
+
+                        <div className="card" style={{ padding: '2rem', maxWidth: '800px' }}>
+                            <div className="form-group">
+                                <label>Hero Image (Home Page Top)</label>
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                                    {siteConfig.heroImage && (
+                                        <div style={{ position: 'relative', width: '200px', height: '120px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                                            <Image src={siteConfig.heroImage} alt="Hero" fill style={{ objectFit: 'cover' }} />
+                                        </div>
+                                    )}
+                                    <div className="upload-controls">
+                                        <input
+                                            type="file"
+                                            id="hero-upload"
+                                            accept="image/*"
+                                            onChange={(e) => handleSiteImageUpload(e, 'heroImage')}
+                                            style={{ display: 'none' }}
+                                            disabled={uploading}
+                                        />
+                                        <label htmlFor="hero-upload" className={`btn-secondary ${uploading ? 'disabled' : ''}`} style={{ cursor: 'pointer' }}>
+                                            {uploading ? '⏳ Uploading...' : '📷 Change Image'}
+                                        </label>
+                                    </div>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={siteConfig.heroImage}
+                                    onChange={(e) => setSiteConfig({ ...siteConfig, heroImage: e.target.value })}
+                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px' }}
+                                    placeholder="/images/..."
+                                />
+                            </div>
+
+                            <hr style={{ margin: '2rem 0', border: '0', borderTop: '1px solid #eee' }} />
+
+                            <div className="form-group">
+                                <label>Story Image (Our Promise Section)</label>
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                                    {siteConfig.storyImage && (
+                                        <div style={{ position: 'relative', width: '150px', height: '150px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                                            <Image src={siteConfig.storyImage} alt="Story" fill style={{ objectFit: 'cover' }} />
+                                        </div>
+                                    )}
+                                    <div className="upload-controls">
+                                        <input
+                                            type="file"
+                                            id="story-upload"
+                                            accept="image/*"
+                                            onChange={(e) => handleSiteImageUpload(e, 'storyImage')}
+                                            style={{ display: 'none' }}
+                                            disabled={uploading}
+                                        />
+                                        <label htmlFor="story-upload" className={`btn-secondary ${uploading ? 'disabled' : ''}`} style={{ cursor: 'pointer' }}>
+                                            {uploading ? '⏳ Uploading...' : '📷 Change Image'}
+                                        </label>
+                                    </div>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={siteConfig.storyImage}
+                                    onChange={(e) => setSiteConfig({ ...siteConfig, storyImage: e.target.value })}
+                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px' }}
+                                    placeholder="/images/..."
+                                />
+                            </div>
+
+                            <hr style={{ margin: '2rem 0', border: '0', borderTop: '1px solid #eee' }} />
+
+                            <div className="form-group">
+                                <label>Founder/Story Image</label>
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                                    {siteConfig.founderImage && (
+                                        <div style={{ position: 'relative', width: '150px', height: '150px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                                            <Image src={siteConfig.founderImage} alt="Founder" fill style={{ objectFit: 'contain' }} />
+                                        </div>
+                                    )}
+                                    <div className="upload-controls">
+                                        <input
+                                            type="file"
+                                            id="founder-upload"
+                                            accept="image/*"
+                                            onChange={(e) => handleSiteImageUpload(e, 'founderImage')}
+                                            style={{ display: 'none' }}
+                                            disabled={uploading}
+                                        />
+                                        <label htmlFor="founder-upload" className={`btn-secondary ${uploading ? 'disabled' : ''}`} style={{ cursor: 'pointer' }}>
+                                            {uploading ? '⏳ Uploading...' : '📷 Change Image'}
+                                        </label>
+                                    </div>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={siteConfig.founderImage}
+                                    onChange={(e) => setSiteConfig({ ...siteConfig, founderImage: e.target.value })}
+                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px' }}
+                                    placeholder="/images/..."
+                                />
+                            </div>
+
+                            <div style={{ marginTop: '3rem', textAlign: 'right' }}>
+                                <button
+                                    onClick={() => saveData({ siteConfig: siteConfig })}
+                                    className="btn-primary"
+                                    disabled={uploading}
+                                >
+                                    💾 Save Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Product Modal */}
@@ -404,7 +568,7 @@ export default function AdminDashboard() {
                                 newCoupons = [...coupons, coupon];
                             }
                             setCoupons(newCoupons);
-                            saveData(products, favorites, newCoupons, true); // Silent auto-save
+                            saveData({ coupons: newCoupons, silent: true }); // Silent auto-save
                             setShowCouponModal(false);
                         }}
                         onClose={() => setShowCouponModal(false)}

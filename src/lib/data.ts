@@ -916,3 +916,15 @@ export const customerFavorites: string[] = [
     "sathumava",
     "sprouted-ragi-almond-cashew"
 ];
+
+export interface SiteConfig {
+    heroImage: string;
+    storyImage: string;
+    founderImage: string;
+}
+
+export const siteConfig: SiteConfig = {
+    heroImage: '/images/hero-baby.png',
+    storyImage: '/images/products-hero.png',
+    founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg'
+};

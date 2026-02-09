@@ -4,7 +4,7 @@ import { join } from 'path';
 
 export async function POST(request: NextRequest) {
     try {
-        const { products, favorites, coupons } = await request.json();
+        const { products, favorites, coupons, siteConfig } = await request.json();
 
         if (!products || !Array.isArray(products)) {
             return NextResponse.json(
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate TypeScript content
-        const content = generateDataFile(products, favorites, coupons);
+        const content = generateDataFile(products, favorites, coupons, siteConfig);
 
         // Write to data.ts file
         const filepath = join(process.cwd(), 'src', 'lib', 'data.ts');
@@ -38,13 +38,14 @@ export async function POST(request: NextRequest) {
 export async function GET() {
     try {
         // Import the current products data
-        const { products, customerFavorites, coupons } = await import('@/lib/data');
+        const { products, customerFavorites, coupons, siteConfig } = await import('@/lib/data');
 
         return NextResponse.json({
             success: true,
             products,
             favorites: customerFavorites,
             coupons: coupons || [],
+            siteConfig: siteConfig || { heroImage: '/images/hero-baby.png', storyImage: '/images/products-hero.png', founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg' },
             count: products.length
         });
     } catch (error) {
@@ -56,7 +57,7 @@ export async function GET() {
     }
 }
 
-function generateDataFile(products: any[], favorites: string[], coupons: any[] = []) {
+function generateDataFile(products: any[], favorites: string[], coupons: any[] = [], siteConfig: any = { heroImage: '/images/hero-baby.png', storyImage: '/images/products-hero.png', founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg' }) {
     return `export interface ProductVariant {
     weight: string;
     price: number;
@@ -101,5 +102,13 @@ export interface Coupon {
 export const coupons: Coupon[] = ${JSON.stringify(coupons, null, 4)};
 
 export const customerFavorites: string[] = ${JSON.stringify(favorites || [], null, 4)};
+
+export interface SiteConfig {
+    heroImage: string;
+    storyImage: string;
+    founderImage: string;
+}
+
+export const siteConfig: SiteConfig = ${JSON.stringify(siteConfig, null, 4)};
 `;
 }
