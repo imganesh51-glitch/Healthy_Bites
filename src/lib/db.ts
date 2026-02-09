@@ -43,6 +43,8 @@ const BLOB_FILENAME = 'app-data.json';
  * Fetch all application data
  */
 export async function getAppData(): Promise<AppData> {
+    let data: AppData = INITIAL_DATA;
+
     try {
         if (IS_PROD) {
             // Production: Try fetching from Vercel Blob
@@ -51,28 +53,35 @@ export async function getAppData(): Promise<AppData> {
                 if (blobs.length > 0) {
                     const response = await fetch(blobs[0].url);
                     if (response.ok) {
-                        const data = await response.json();
-                        return data as AppData;
+                        data = await response.json();
                     }
                 }
             } catch (e) {
                 console.error("Error reading from Blob:", e);
             }
-
-            // If no blob exists, return initial data (will be saved on first admin save)
-            return INITIAL_DATA;
         } else {
             // Local Development: filesystem/JSON
             if (fs.existsSync(LOCAL_FILE_PATH)) {
                 try {
                     const fileContent = fs.readFileSync(LOCAL_FILE_PATH, 'utf-8');
-                    return JSON.parse(fileContent);
+                    data = JSON.parse(fileContent);
                 } catch (e) {
                     console.error("Error reading local data.json:", e);
                 }
             }
-            return INITIAL_DATA;
         }
+
+        // Perform data migrations/fixes
+        if (data.coupons) {
+            const save10Index = data.coupons.findIndex((c: any) => c.code === 'SAVE10');
+            if (save10Index !== -1 && data.coupons[save10Index].applicability !== 'all') {
+                console.log("Migrating SAVE10 coupon to global applicability");
+                data.coupons[save10Index].applicability = 'all';
+                data.coupons[save10Index].target = '';
+            }
+        }
+
+        return data;
     } catch (error) {
         console.error("Failed to fetch app data:", error);
         return INITIAL_DATA;
