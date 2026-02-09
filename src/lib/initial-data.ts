@@ -905,8 +905,7 @@ export const coupons: Coupon[] = [
         "code": "SAVE10",
         "discountType": "percentage",
         "discountValue": 10,
-        "applicability": "product",
-        "target": "sathumava",
+        "applicability": "all",
         "active": true
     }
 ];
