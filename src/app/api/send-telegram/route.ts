@@ -15,8 +15,6 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { message } = body;
 
-        // In a real app, these are in process.env
-        // For now, we will use placeholders or try to read from env
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
         const chatId = process.env.TELEGRAM_CHAT_ID;
 
