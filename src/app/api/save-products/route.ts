@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
                 storyImage: '/images/products-hero.png',
                 founderImage: '/images/products/WhatsApp Image 2026-02-08 at 9.01.43 PM.jpeg'
             },
-            orders: orders || existingData.orders || []
+            orders: orders !== undefined ? orders : (existingData.orders || [])
         });
 
         return NextResponse.json({

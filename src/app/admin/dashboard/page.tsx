@@ -24,8 +24,8 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
 
     // Fetch data from API on mount
-    useEffect(() => {
-        fetch('/api/save-products')
+    const fetchData = () => {
+        fetch('/api/save-products?t=' + Date.now())
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -41,6 +41,14 @@ export default function AdminDashboard() {
                 console.error('Error loading data:', err);
                 setLoading(false);
             });
+    };
+
+    useEffect(() => {
+        fetchData();
+
+        // Auto-refresh orders every 30 seconds
+        const interval = setInterval(fetchData, 30000);
+        return () => clearInterval(interval);
     }, []);
 
     const handleSiteImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: keyof SiteConfig) => {

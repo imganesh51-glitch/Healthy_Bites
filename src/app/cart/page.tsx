@@ -89,11 +89,15 @@ export default function CartPage() {
 
         // Save order to database
         try {
-            await fetch('/api/orders', {
+            const res = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderData)
             });
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error('Order save failed:', errorData);
+            }
         } catch (err) {
             console.error('Failed to save order to database:', err);
         }
@@ -512,22 +516,147 @@ export default function CartPage() {
 
     if (orderSuccess) {
         return (
-            <div className="container" style={{ padding: '6rem 0', textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: '80px', height: '80px', background: '#4CAF50', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2rem' }}>
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
+            <div className="container" style={{
+                padding: '6rem 0',
+                textAlign: 'center',
+                minHeight: '80vh',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(to bottom, #ffffff, #f9f9f9)'
+            }}>
+                <style jsx>{`
+                    .success-animation { margin: 2rem auto; }
+                    .checkmark {
+                        width: 100px;
+                        height: 100px;
+                        border-radius: 50%;
+                        display: block;
+                        stroke-width: 2;
+                        stroke: #4CAF50;
+                        stroke-miterlimit: 10;
+                        box-shadow: inset 0px 0px 0px #4CAF50;
+                        animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+                        position: relative;
+                        top: 5px;
+                        right: 5px;
+                        margin: 0 auto;
+                    }
+                    .checkmark__circle {
+                        stroke-dasharray: 166;
+                        stroke-dashoffset: 166;
+                        stroke-width: 2;
+                        stroke-miterlimit: 10;
+                        stroke: #4CAF50;
+                        fill: none;
+                        animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+                    }
+                    .checkmark__check {
+                        transform-origin: 50% 50%;
+                        stroke-dasharray: 48;
+                        stroke-dashoffset: 48;
+                        animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+                    }
+
+                    @keyframes stroke { 100% { stroke-dashoffset: 0; } }
+                    @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
+                    @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 50px #4CAF50; stroke: #fff; } }
+
+                    .confetti-container {
+                        position: absolute;
+                        width: 100%;
+                        height: 100%;
+                        overflow: hidden;
+                        z-index: -1;
+                    }
+                    .confetti {
+                        position: absolute;
+                        width: 10px;
+                        height: 10px;
+                        background: #ffd700;
+                        opacity: 0;
+                        border-radius: 2px;
+                        animation: confetti-fall 3s ease-out forwards;
+                    }
+                    @keyframes confetti-fall {
+                        0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
+                        100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
+                    }
+
+                    .fade-in-up {
+                        animation: fadeInUp 0.8s ease-out both;
+                    }
+                    @keyframes fadeInUp {
+                        from { opacity: 0; transform: translateY(20px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `}</style>
+
+                <div className="success-animation">
+                    <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle className="checkmark__circle" cx="26" cy="26" r="25" fill="none" />
+                        <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
                     </svg>
                 </div>
-                <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', color: '#333' }}>Order Placed Successfully!</h1>
-                <p style={{ fontSize: '1.2rem', color: '#333', marginBottom: '0.5rem', fontWeight: 600 }}>
-                    Order #{lastOrderId}
-                </p>
-                <p style={{ fontSize: '1.1rem', color: '#666', marginBottom: '2rem', maxWidth: '600px', lineHeight: '1.6' }}>
-                    Thank you for your purchase. We have received your order details and will process it shortly.
-                </p>
-                <Link href="/" className="btn btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.1rem' }}>
-                    Continue Shopping
-                </Link>
+
+                <div className="fade-in-up" style={{ animationDelay: '1s' }}>
+                    <div style={{ marginBottom: '2rem', position: 'relative', width: '250px', height: '250px' }}>
+                        <Image
+                            src="/images/order-success.png"
+                            alt="Order Success"
+                            fill
+                            style={{ objectFit: 'contain' }}
+                        />
+                    </div>
+                </div>
+
+                <div className="fade-in-up" style={{ animationDelay: '1.4s' }}>
+                    <h1 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '1rem', color: '#333' }}>
+                        Wooohoo! 🎉
+                    </h1>
+                    <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem', color: '#4CAF50' }}>
+                        Order Placed Successfully!
+                    </h2>
+                    <div style={{
+                        background: '#fff',
+                        padding: '1.5rem 3rem',
+                        borderRadius: '20px',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+                        marginBottom: '2rem'
+                    }}>
+                        <p style={{ fontSize: '1.1rem', color: '#666', margin: 0 }}>
+                            Order ID: <strong style={{ color: '#333' }}>#{lastOrderId}</strong>
+                        </p>
+                        <p style={{ fontSize: '1rem', color: '#888', marginTop: '0.5rem' }}>
+                            We've received your order and are preparing your healthy bites.
+                        </p>
+                    </div>
+
+                    <Link href="/" className="btn btn-primary" style={{
+                        padding: '1.2rem 3rem',
+                        fontSize: '1.1rem',
+                        borderRadius: '50px',
+                        boxShadow: '0 15px 35px rgba(102, 126, 234, 0.4)',
+                        transition: 'all 0.3s ease'
+                    }}>
+                        Back to Home
+                    </Link>
+                </div>
+
+                {/* Simple confetti particles */}
+                {[...Array(20)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="confetti"
+                        style={{
+                            left: `${Math.random() * 100}%`,
+                            backgroundColor: ['#667eea', '#764ba2', '#4CAF50', '#FFD700', '#FF6B6B'][Math.floor(Math.random() * 5)],
+                            animationDelay: `${Math.random() * 2}s`,
+                            animationDuration: `${2 + Math.random() * 2}s`
+                        }}
+                    />
+                ))}
             </div>
         );
     }
