@@ -165,24 +165,11 @@ export default function CartPage() {
             console.error('Error sending telegram:', error);
         }
 
-        // 3. Handle Overall Result
-        if (dbSaved && telegramSent) {
-            // Perfect success
+        // 3. Handle Overall Result (Show success page if at least one path succeeded)
+        if (dbSaved || telegramSent) {
             setLastOrderId(orderId);
             setOrderSuccess(true);
             clearCart();
-        } else if (dbSaved) {
-            // Saved to DB but notification failed
-            setLastOrderId(orderId);
-            setOrderSuccess(true);
-            clearCart();
-            alert('Order Successful! (Note: Merchant notification failed, but your order is recorded in our system).');
-        } else if (telegramSent) {
-            // Notification sent but DB failed
-            setLastOrderId(orderId);
-            setOrderSuccess(true);
-            clearCart();
-            alert('Order Received! (Note: Local record failed, but our team has been notified via Telegram).');
         } else {
             // Both failed
             alert('Error: Could not place order. Please check your internet or contact us directly on Telegram.');
