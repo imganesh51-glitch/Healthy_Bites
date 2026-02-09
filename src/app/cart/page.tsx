@@ -102,38 +102,47 @@ export default function CartPage() {
             console.error('Failed to save order to database:', err);
         }
 
-        let message = `🌿 *Aaditya's Healthy Bites*\n`;
-        message += `*New Order!* (#${orderId})\n`;
-        message += `*Date:* ${new Date().toLocaleDateString()}\n\n`;
+        const escapeHtml = (unsafe: string) => {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        };
 
-        message += `*Contact Info:*\n`;
-        message += `Name: ${formData.firstName} ${formData.lastName}\n`;
-        message += `Mobile: ${formData.mobile}\n`;
+        let message = `🌿 <b>${escapeHtml("Aaditya's Healthy Bites")}</b>\n`;
+        message += `<b>New Order!</b> (#${orderId})\n`;
+        message += `<b>Date:</b> ${new Date().toLocaleDateString()}\n\n`;
+
+        message += `<b>Contact Info:</b>\n`;
+        message += `Name: ${escapeHtml(formData.firstName)} ${escapeHtml(formData.lastName)}\n`;
+        message += `Mobile: ${escapeHtml(formData.mobile)}\n`;
 
 
-        message += `\n*Shipping Address:*\n`;
-        message += `${formData.street}\n`;
-        if (formData.apartment) message += `${formData.apartment}\n`;
-        message += `${formData.city}, ${formData.state} - ${formData.zipCode}\n`;
-        message += `${formData.country}\n`;
+        message += `\n<b>Shipping Address:</b>\n`;
+        message += `${escapeHtml(formData.street)}\n`;
+        if (formData.apartment) message += `${escapeHtml(formData.apartment)}\n`;
+        message += `${escapeHtml(formData.city)}, ${escapeHtml(formData.state)} - ${escapeHtml(formData.zipCode)}\n`;
+        message += `${escapeHtml(formData.country)}\n`;
 
         // Add Google Maps link if location data exists
         if (formData.latitude && formData.longitude) {
-            message += `Location: https://www.google.com/maps?q=${formData.latitude},${formData.longitude}\n`;
+            message += `Location: <a href="https://www.google.com/maps?q=${formData.latitude},${formData.longitude}">View on Google Maps</a>\n`;
         }
         message += `\n`;
 
-        message += `*Order Items:*\n`;
+        message += `<b>Order Items:</b>\n`;
         cart.forEach((item) => {
-            message += `- ${item.name} [${item.weight}] (x${item.quantity}) - ₹${(item.price * item.quantity).toFixed(2)}\n`;
+            message += `- ${escapeHtml(item.name)} [${escapeHtml(item.weight || '')}] (x${item.quantity}) - ₹${(item.price * item.quantity).toFixed(2)}\n`;
         });
 
-        message += `\n*Subtotal: ₹${total.toFixed(2)}*`;
+        message += `\n<b>Subtotal: ₹${total.toFixed(2)}</b>`;
         if (discount > 0) {
-            message += `\n*Discount: -₹${discount.toFixed(2)} (${coupon?.code})*`;
+            message += `\n<b>Discount: -₹${discount.toFixed(2)} (${escapeHtml(coupon?.code || '')})</b>`;
         }
-        message += `\n*Shipping: ₹${SHIPPING_COST.toFixed(2)}*`;
-        message += `\n*Grand Total: ₹${(finalTotal + SHIPPING_COST).toFixed(2)}*`;
+        message += `\n<b>Shipping: ₹${SHIPPING_COST.toFixed(2)}</b>`;
+        message += `\n<b>Grand Total: ₹${(finalTotal + SHIPPING_COST).toFixed(2)}</b>`;
 
         try {
             const response = await fetch('/api/send-telegram', {

@@ -39,14 +39,31 @@ export async function POST(request: Request) {
             body: JSON.stringify({
                 chat_id: chatId,
                 text: message,
-                parse_mode: 'Markdown' // Or 'HTML' if you prefer
+                parse_mode: 'HTML'
             }),
         });
 
         const data = await response.json();
 
         if (!data.ok) {
-            console.error("Telegram API Error:", data);
+            console.error("Telegram API Error Details:", JSON.stringify(data, null, 2));
+            console.log("Failed Message Content:", message);
+
+            // If it was a parsing error, try sending as plain text
+            if (data.description && (data.description.includes("can't parse") || data.description.includes("entities") || data.description.includes("tag"))) {
+                console.log("HTML parsing failed, retrying as plain text...");
+                const retryResponse = await fetch(telegramUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: message.replace(/<[^>]*>/g, ''), // Strip HTML tags
+                    }),
+                });
+                const retryData = await retryResponse.json();
+                if (retryData.ok) return NextResponse.json({ success: true, warning: 'Sent as plain text' });
+            }
+
             throw new Error(data.description || "Failed to send Telegram message");
         }
 
