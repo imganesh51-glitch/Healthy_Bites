@@ -7,7 +7,6 @@ import { useCart } from '../../../context/CartContext';
 import { useState, useEffect } from 'react';
 import './product-detail.css';
 
-// Define Product type interface locally or import it
 interface Product {
     id: string;
     name: string;
@@ -29,11 +28,11 @@ export default function ProductDetailPage() {
     const { addToCart } = useCart();
     const [added, setAdded] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState<any>(undefined);
+    const [quantity, setQuantity] = useState(1);
 
     useEffect(() => {
         const fetchProduct = async () => {
             try {
-                // Fetch fresh data from API
                 const res = await fetch('/api/products', { cache: 'no-store' });
                 const data = await res.json();
                 const found = data.products.find((p: any) => p.id === id);
@@ -55,11 +54,10 @@ export default function ProductDetailPage() {
     if (loading) {
         return (
             <div className="container" style={{ padding: '6rem 0', textAlign: 'center' }}>
-                <h1>Loading...</h1>
+                <p style={{ fontSize: '1.2rem', color: 'var(--color-text-light)' }}>Loading product...</p>
             </div>
         );
     }
-    const [quantity, setQuantity] = useState(1);
 
     if (!product) {
         return (
