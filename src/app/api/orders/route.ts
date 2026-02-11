@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAppData, saveAppData, Order } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // Create a new order
 export async function POST(request: NextRequest) {
     try {
