@@ -188,3 +188,11 @@ export async function getCoupons(): Promise<Coupon[]> {
     const data = await getAppData();
     return data.coupons;
 }
+
+/**
+ * Helper to get favorites
+ */
+export async function getFavorites(): Promise<string[]> {
+    const data = await getAppData();
+    return data.favorites;
+}
