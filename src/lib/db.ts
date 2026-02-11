@@ -70,12 +70,21 @@ export async function getAppData(): Promise<AppData> {
                     .sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
 
                 if (dataBlobs.length > 0) {
-                    logDebug(`Fetching newest data from blob: ${dataBlobs[0].url}`);
-                    // Ensure we don't cache the fetch of the blob data
-                    const response = await fetch(dataBlobs[0].url, { cache: 'no-store' });
-                    if (response.ok) {
-                        data = await response.json();
-                        logDebug(`Successfully loaded data from Blob.`);
+                    // Try to fetch the newest blob first, but fallback to older ones if immediate consistency issues arise
+                    for (const blob of dataBlobs) {
+                        try {
+                            logDebug(`Fetching data from blob: ${blob.url}`);
+                            const response = await fetch(blob.url, { cache: 'no-store' });
+                            if (response.ok) {
+                                data = await response.json();
+                                logDebug(`Successfully loaded data from Blob.`);
+                                break; // Found valid data
+                            } else {
+                                logDebug(`Failed to fetch blob (status ${response.status}): ${blob.url}`);
+                            }
+                        } catch (fetchErr) {
+                            logDebug(`Error fetching specific blob: ${fetchErr}`);
+                        }
                     }
                 } else {
                     logDebug("No data blobs found, using initial data.");
@@ -133,7 +142,9 @@ export async function saveAppData(data: AppData): Promise<boolean> {
             });
             logDebug(`Saved new blob: ${newBlob.url}`);
 
-            // 2. Cleanup: Delete ALL other blobs with this pathname prefix
+            // 2. Cleanup: Temporarily disabled to prevent consistency race conditions
+            // We can enable a background cleanup job later
+            /*
             try {
                 const { blobs } = await list();
                 const oldBlobs = blobs.filter(b =>
@@ -148,6 +159,7 @@ export async function saveAppData(data: AppData): Promise<boolean> {
             } catch (e) {
                 logDebug(`Cleanup warning (non-critical): ${e}`);
             }
+            */
         } else {
             // Local Development: Save to filesystem
             logDebug(`Saving local data to: ${LOCAL_FILE_PATH}`);
