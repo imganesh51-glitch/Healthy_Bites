@@ -132,6 +132,13 @@ export async function saveAppData(data: AppData): Promise<{ success: boolean; ur
     try {
         if (IS_PROD) {
             logDebug(`Saving to Blob store...`);
+
+            // Permission/Token Check
+            const token = process.env.BLOB_READ_WRITE_TOKEN;
+            if (!token || !token.startsWith('vercel_blob_rw_')) {
+                logDebug(`WARNING: Token may be invalid or read-only. Prefix: ${token?.substring(0, 15)}...`);
+            }
+
             // Production: Save to Vercel Blob
             // 1. Upload new blob first (safest)
             const jsonString = JSON.stringify(data, null, 2);
