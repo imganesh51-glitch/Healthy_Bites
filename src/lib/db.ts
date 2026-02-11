@@ -128,7 +128,7 @@ export async function getAppData(): Promise<AppData> {
 /**
  * Save application data
  */
-export async function saveAppData(data: AppData): Promise<boolean> {
+export async function saveAppData(data: AppData): Promise<{ success: boolean; url?: string; mode: string }> {
     try {
         if (IS_PROD) {
             logDebug(`Saving to Blob store...`);
@@ -142,31 +142,14 @@ export async function saveAppData(data: AppData): Promise<boolean> {
             });
             logDebug(`Saved new blob: ${newBlob.url}`);
 
-            // 2. Cleanup: Temporarily disabled to prevent consistency race conditions
-            // We can enable a background cleanup job later
-            /*
-            try {
-                const { blobs } = await list();
-                const oldBlobs = blobs.filter(b =>
-                    b.pathname.startsWith(BLOB_FILENAME) &&
-                    b.url !== newBlob.url
-                );
-
-                logDebug(`Cleaning up ${oldBlobs.length} old blobs...`);
-                for (const blob of oldBlobs) {
-                    await del(blob.url);
-                }
-            } catch (e) {
-                logDebug(`Cleanup warning (non-critical): ${e}`);
-            }
-            */
+            return { success: true, url: newBlob.url, mode: 'blob' };
         } else {
             // Local Development: Save to filesystem
             logDebug(`Saving local data to: ${LOCAL_FILE_PATH}`);
             fs.writeFileSync(LOCAL_FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
             logDebug(`Successfully saved data. Products count: ${data.products.length}`);
+            return { success: true, mode: 'local' };
         }
-        return true;
     } catch (error) {
         logDebug(`Failed to save app data: ${error}`);
         throw error;

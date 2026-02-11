@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Save to KV/JSON store
-        await saveAppData({
+        const result = await saveAppData({
             products,
             coupons: coupons || [],
             favorites: favorites || [],
@@ -33,7 +33,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             message: 'Products saved successfully',
-            count: products.length
+            count: products.length,
+            mode: result.mode,
+            url: result.url
         });
 
     } catch (error) {
