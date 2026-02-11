@@ -3,21 +3,62 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { products } from '../../../lib/data';
 import { useCart } from '../../../context/CartContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './product-detail.css';
+
+// Define Product type interface locally or import it
+interface Product {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    image: string;
+    category: string;
+    ingredients: string[];
+    ageGroup: string;
+    weight?: string;
+    variants?: any[];
+}
 
 export default function ProductDetailPage() {
     const params = useParams();
     const id = params?.id as string;
-    const product = products.find(p => p.id === id);
+    const [product, setProduct] = useState<Product | null>(null);
+    const [loading, setLoading] = useState(true);
     const { addToCart } = useCart();
     const [added, setAdded] = useState(false);
+    const [selectedVariant, setSelectedVariant] = useState<any>(undefined);
 
-    const [selectedVariant, setSelectedVariant] = useState(
-        product?.variants && product.variants.length > 0 ? product.variants[0] : undefined
-    );
+    useEffect(() => {
+        const fetchProduct = async () => {
+            try {
+                // Fetch fresh data from API
+                const res = await fetch('/api/products', { cache: 'no-store' });
+                const data = await res.json();
+                const found = data.products.find((p: any) => p.id === id);
+                if (found) {
+                    setProduct(found);
+                    if (found.variants && found.variants.length > 0) {
+                        setSelectedVariant(found.variants[0]);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch product", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProduct();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <div className="container" style={{ padding: '6rem 0', textAlign: 'center' }}>
+                <h1>Loading...</h1>
+            </div>
+        );
+    }
     const [quantity, setQuantity] = useState(1);
 
     if (!product) {
@@ -33,7 +74,7 @@ export default function ProductDetailPage() {
     const currentWeight = selectedVariant ? selectedVariant.weight : product.weight;
 
     const handleAddToCart = () => {
-        addToCart(product, selectedVariant, quantity);
+        addToCart(product as any, selectedVariant, quantity);
         setAdded(true);
         setTimeout(() => setAdded(false), 2000);
     };
