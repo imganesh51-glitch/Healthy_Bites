@@ -71,7 +71,8 @@ export async function getAppData(): Promise<AppData> {
 
                 if (dataBlobs.length > 0) {
                     logDebug(`Fetching newest data from blob: ${dataBlobs[0].url}`);
-                    const response = await fetch(dataBlobs[0].url);
+                    // Ensure we don't cache the fetch of the blob data
+                    const response = await fetch(dataBlobs[0].url, { cache: 'no-store' });
                     if (response.ok) {
                         data = await response.json();
                         logDebug(`Successfully loaded data from Blob.`);
