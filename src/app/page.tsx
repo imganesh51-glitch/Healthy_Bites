@@ -1,12 +1,26 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { getProducts, getSiteConfig } from '../lib/db';
+import { getProducts, getSiteConfig, getFavorites } from '../lib/db';
 import './home.css';
+
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const products = await getProducts();
   const siteConfig = await getSiteConfig();
-  const featuredProducts = products.slice(0, 3);
+  const favorites = await getFavorites();
+
+  // Filter for favorites if they exist, otherwise fallback to first 3 products
+  let featuredProducts = [];
+  if (favorites && favorites.length > 0) {
+    featuredProducts = products.filter(p => favorites.includes(p.id));
+    // If for some reason filtered list is empty (e.g. favorite IDs don't match products), fallback
+    if (featuredProducts.length === 0) {
+      featuredProducts = products.slice(0, 3);
+    }
+  } else {
+    featuredProducts = products.slice(0, 3);
+  }
 
   return (
     <div>
