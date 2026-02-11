@@ -65,8 +65,10 @@ export async function getAppData(): Promise<AppData> {
             try {
                 const { blobs } = await list();
                 // Filter for our specific filename pattern and sort by newest first
+                // Note: put() with addRandomSuffix: true modifies the filename (e.g. app-data.json -> app-data-SUFFIX.json)
+                // so we must exact match the prefix, not the full original filename
                 const dataBlobs = blobs
-                    .filter(b => b.pathname.startsWith(BLOB_FILENAME))
+                    .filter(b => b.pathname.startsWith('app-data'))
                     .sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
 
                 if (dataBlobs.length > 0) {
