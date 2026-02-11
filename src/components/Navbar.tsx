@@ -22,23 +22,25 @@ export default function Navbar() {
           Aaditya's Healthy Bites
         </Link>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="mobile-menu-btn"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle menu"
-        >
-          {isOpen ? '✕' : '☰'}
-        </button>
-
         <div className={`nav-links ${isOpen ? 'open' : ''}`}>
           <Link href="/" className="nav-link" onClick={() => setIsOpen(false)}>Home</Link>
           <Link href="/products" className="nav-link" onClick={() => setIsOpen(false)}>Products</Link>
           <Link href="/story" className="nav-link" onClick={() => setIsOpen(false)}>Our Story</Link>
-          <Link href="/cart" className="nav-link cart-btn" onClick={() => setIsOpen(false)}>
-            Cart
+        </div>
+
+        <div className="nav-actions">
+          <Link href="/cart" className="cart-btn" aria-label="Cart">
+            <span style={{ fontSize: '1.5rem' }}>🛒</span>
             {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
           </Link>
+
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
+          >
+            {isOpen ? '✕' : '☰'}
+          </button>
         </div>
       </div>
     </nav>

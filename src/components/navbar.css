@@ -71,6 +71,12 @@
     padding: 0.5rem;
 }
 
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .logo {
@@ -108,5 +114,10 @@
         width: 100%;
         text-align: center;
         padding: 0.5rem 0;
+    }
+
+    .nav-actions {
+        z-index: 1001;
+        /* Ensure above mobile menu */
     }
 }
