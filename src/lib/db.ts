@@ -35,12 +35,11 @@ const INITIAL_DATA: AppData = {
 };
 
 // Mode Detection - Use NODE_ENV to determine environment
-// In development, always use local file storage even if BLOB token is present
-const IS_PROD = process.env.NODE_ENV === 'production' && !!process.env.BLOB_READ_WRITE_TOKEN;
 const LOCAL_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'data.json');
 const BLOB_FILENAME = 'app-data.json';
 
 // Log storage mode on startup
+const IS_PROD = process.env.NODE_ENV === 'production' && !!process.env.BLOB_READ_WRITE_TOKEN && !!process.env.VERCEL;
 console.log(`[DB] Storage Mode: ${IS_PROD ? 'PRODUCTION (Vercel Blob)' : 'DEVELOPMENT (Local File)'}`);
 console.log(`[DB] Local file path: ${LOCAL_FILE_PATH}`);
 
@@ -61,27 +60,31 @@ export async function getAppData(): Promise<AppData> {
                     .sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
 
                 if (dataBlobs.length > 0) {
-                    console.log(`Fetching newest data from blob: ${dataBlobs[0].url} (Uploaded: ${dataBlobs[0].uploadedAt})`);
+                    console.log(`[DB] Fetching newest data from blob: ${dataBlobs[0].url}`);
                     const response = await fetch(dataBlobs[0].url);
                     if (response.ok) {
                         data = await response.json();
-                        console.log(`Successfully loaded data. Orders count: ${data.orders?.length || 0}`);
+                        console.log(`[DB] Successfully loaded data from Blob. Orders count: ${data.orders?.length || 0}`);
                     }
                 } else {
-                    console.log("No data blobs found, using initial data.");
+                    console.log("[DB] No data blobs found, using initial data.");
                 }
             } catch (e) {
-                console.error("Error reading from Blob:", e);
+                console.error(`[DB] Error reading from Blob: ${e}`);
             }
         } else {
             // Local Development: filesystem/JSON
             if (fs.existsSync(LOCAL_FILE_PATH)) {
                 try {
+                    console.log(`[DB] Reading local data from: ${LOCAL_FILE_PATH}`);
                     const fileContent = fs.readFileSync(LOCAL_FILE_PATH, 'utf-8');
                     data = JSON.parse(fileContent);
+                    console.log(`[DB] Successfully read local data.`);
                 } catch (e) {
-                    console.error("Error reading local data.json:", e);
+                    console.error(`[DB] Error reading local data.json: ${e}`);
                 }
+            } else {
+                console.warn(`[DB] Local data file not found at: ${LOCAL_FILE_PATH}. Using INITIAL_DATA.`);
             }
         }
 
@@ -97,7 +100,7 @@ export async function getAppData(): Promise<AppData> {
 
         return data;
     } catch (error) {
-        console.error("Failed to fetch app data:", error);
+        console.error(`[DB] Failed to fetch app data: ${error}`);
         return INITIAL_DATA;
     }
 }
@@ -108,8 +111,7 @@ export async function getAppData(): Promise<AppData> {
 export async function saveAppData(data: AppData): Promise<boolean> {
     try {
         if (IS_PROD) {
-            console.log(`Saving to Blob store. Orders count to save: ${data.orders?.length || 0}`);
-
+            console.log(`[DB] Saving to Blob store...`);
             // Production: Save to Vercel Blob
             // 1. Upload new blob first (safest)
             const jsonString = JSON.stringify(data, null, 2);
@@ -118,7 +120,7 @@ export async function saveAppData(data: AppData): Promise<boolean> {
                 contentType: 'application/json',
                 addRandomSuffix: true // Ensure unique URL
             });
-            console.log(`Saved new blob: ${newBlob.url}`);
+            console.log(`[DB] Saved new blob: ${newBlob.url}`);
 
             // 2. Cleanup: Delete ALL other blobs with this pathname prefix
             try {
@@ -137,11 +139,13 @@ export async function saveAppData(data: AppData): Promise<boolean> {
             }
         } else {
             // Local Development: Save to filesystem
+            console.log(`[DB] Saving local data to: ${LOCAL_FILE_PATH}`);
             fs.writeFileSync(LOCAL_FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+            console.log(`[DB] Successfully saved data.`);
         }
         return true;
     } catch (error) {
-        console.error("Failed to save app data:", error);
+        console.error(`[DB] Failed to save app data: ${error}`);
         throw error;
     }
 }
